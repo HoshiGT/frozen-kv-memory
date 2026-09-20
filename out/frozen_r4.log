@@ -1,0 +1,28 @@
+=== 1.7B smoke 21:09:58 ===
+  fits; running 400 steps
+[ 400] k= 32 up=3.155 low=3.687 mem=3.1622 gap=0.532 recovery=+98.7% | k16:+86% k32:+99% k72:+104% k128:+103% | 636s
+=== recursion 21:22:01 ===
+--- hops=2 ---
+  File "/home/hoshi/Claude/memzip/recur.py", line 78, in main
+    cfg = model.config if not hasattr(model, "base_model") else model.base_model.model.config
+                                                                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1968, in __getattr__
+    raise AttributeError(
+AttributeError: 'Qwen3Model' object has no attribute 'model'
+--- hops=4 ---
+  File "/home/hoshi/Claude/memzip/recur.py", line 78, in main
+    cfg = model.config if not hasattr(model, "base_model") else model.base_model.model.config
+                                                                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1968, in __getattr__
+    raise AttributeError(
+AttributeError: 'Qwen3Model' object has no attribute 'model'
+--- hops=8 ---
+  File "/home/hoshi/Claude/memzip/recur.py", line 78, in main
+    cfg = model.config if not hasattr(model, "base_model") else model.base_model.model.config
+                                                                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1968, in __getattr__
+    raise AttributeError(
+AttributeError: 'Qwen3Model' object has no attribute 'model'
+=== deep 1000 21:22:21 ===
+[1000] k= 32 up=3.459 low=3.951 mem=3.4388 gap=0.492 recovery=+104.1% | k16:+83% k32:+104% k72:+110% k128:+111% | 744s
+=== done 21:34:59 ===

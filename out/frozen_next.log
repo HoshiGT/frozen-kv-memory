@@ -1,0 +1,19 @@
+=== long1500 20:08:23 ===
+[1500] k= 32 up=3.459 low=3.951 mem=3.8986 gap=0.492 recovery=+10.7% | k16:-33% k32:+11% k72:+87% k128:+89% | 1093s
+=== lora5e-3 20:26:50 ===
+[ 400] k= 32 up=3.037 low=3.370 mem=3.3435 gap=0.332 recovery=+7.9% | k16:+6% k32:+8% k72:+7% k128:+4% | 378s
+=== lr3e-3 20:33:25 ===
+[ 400] k= 32 up=3.459 low=3.951 mem=3.6936 gap=0.492 recovery=+52.3% | k16:-313% k32:+52% k72:+73% k128:+74% | 291s
+=== lr8e-3 20:38:30 ===
+[ 400] k= 32 up=3.459 low=3.951 mem=3.6592 gap=0.492 recovery=+59.3% | k16:+48% k32:+59% k72:+67% k128:+71% | 291s
+=== deep5e-3 20:43:35 ===
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+=== all done 20:43:44 ===
+deep5e-3                 
+long1500                 [ 950] k= 32 up=3.459 low=3.951 mem=4.4090 gap=0.492 recovery=-93.0% | k16:-127% k32:-93% k72:+81% k128:+84% | 692s
+lora5e-3                 [ 400] k= 32 up=3.037 low=3.370 mem=3.3435 gap=0.332 recovery=+7.9% | k16:+6% k32:+8% k72:+7% k128:+4% | 378s
+lr1e-3                   [ 400] k= 32 up=3.459 low=3.951 mem=5.1638 gap=0.492 recovery=-246.3% | k16:-292% k32:-246% k72:+67% k128:+69% | 309s
+lr2e-2                   [ 400] k= 32 up=3.459 low=3.951 mem=4.5608 gap=0.492 recovery=-123.8% | k16:-226% k32:-124% k72:+68% k128:+58% | 298s
+lr3e-3                   [ 400] k= 32 up=3.459 low=3.951 mem=3.6936 gap=0.492 recovery=+52.3% | k16:-313% k32:+52% k72:+73% k128:+74% | 291s
+lr5e-3                   [ 400] k= 32 up=3.459 low=3.951 mem=3.6255 gap=0.492 recovery=+66.2% | k16:+44% k32:+66% k72:+71% k128:+73% | 309s
+lr8e-3                   [ 400] k= 32 up=3.459 low=3.951 mem=3.6592 gap=0.492 recovery=+59.3% | k16:+48% k32:+59% k72:+67% k128:+71% | 291s

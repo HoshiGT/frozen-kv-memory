@@ -1,0 +1,34 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13534.36it/s]
+LoRA params: 0.00M  (backbone FROZEN) | dtype=bf16
+memory params: 3.670M (deep, 27 layers)
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 376 / eval 24 | seg=512 k=32 (16:1)
+Traceback (most recent call last):
+  File "/home/hoshi/Claude/memzip/train_memtok.py", line 290, in <module>
+    main()
+  File "/home/hoshi/Claude/memzip/train_memtok.py", line 202, in main
+    e0 = evaluate()
+         ^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/Claude/memzip/train_memtok.py", line 177, in evaluate
+    model, cfg, bb, past_for(name, a, False, k_now),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/Claude/memzip/train_memtok.py", line 165, in past_for
+    return compress(model, mem, ids_a, grad=grad, k=k)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/Claude/memzip/memtok.py", line 121, in compress
+    with ctx, deep_prefix(model, mem, k):
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/home/hoshi/Claude/memzip/memtok.py", line 85, in deep_prefix
+    for i, layer in enumerate(decoder_layers(model)[: mem.deep.shape[0]]):
+                              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/Claude/memzip/state.py", line 167, in decoder_layers
+    return m.model.layers
+           ^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1968, in __getattr__
+    raise AttributeError(
+AttributeError: 'Qwen3Model' object has no attribute 'model'

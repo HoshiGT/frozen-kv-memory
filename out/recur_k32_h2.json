@@ -1,0 +1,27 @@
+{
+ "args": {
+  "seg": 512,
+  "k": 32,
+  "hops": 2,
+  "n": 16,
+  "ckpt": "ckpt/memtok_k32_deep_frozen.pt",
+  "lora": "",
+  "dtype": "bf16",
+  "mem_depth": true,
+  "model": "./qwen3-0.6b"
+ },
+ "upper": 3.248201474547386,
+ "lower": 3.998448222875595,
+ "rows": [
+  {
+   "hops": 1,
+   "ce": 3.4743090718984604,
+   "recovery": 0.6986223561049553
+  },
+  {
+   "hops": 2,
+   "ce": 3.5065315812826157,
+   "recovery": 0.6556731404556273
+  }
+ ]
+}

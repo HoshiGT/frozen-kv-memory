@@ -1,0 +1,738 @@
+<title>Memzip 128:1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground:   #F1F2F4;
+    --surface:  #FBFBFC;
+    --sunken:   #E7E9EC;
+    --ink:      #171C22;
+    --ink-soft: #3D4652;
+    --muted:    #667180;
+    --line:     #D3D7DD;
+    --line-soft:#E2E5E9;
+    --brass:    #9C6B2E;
+    --brass-dim:#C4A36F;
+    --pos:      #2F6B4F;
+    --neg:      #A33E28;
+
+    --mono: "IBM Plex Mono", "Cascadia Mono", ui-monospace, monospace;
+    --sans: "Archivo", "PingFang SC", "Source Han Sans SC", "Noto Sans CJK SC",
+            "Microsoft YaHei", system-ui, sans-serif;
+    --serif: "Source Serif 4", "Songti SC", "Source Han Serif SC",
+             "Noto Serif CJK SC", Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:   #12161A;
+      --surface:  #1A1F25;
+      --sunken:   #0D1013;
+      --ink:      #E7EAEE;
+      --ink-soft: #B3BBC5;
+      --muted:    #8391A0;
+      --line:     #2C343D;
+      --line-soft:#232A31;
+      --brass:    #C89A5B;
+      --brass-dim:#8A6B3C;
+      --pos:      #5FA37D;
+      --neg:      #D0715A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:   #12161A;
+    --surface:  #1A1F25;
+    --sunken:   #0D1013;
+    --ink:      #E7EAEE;
+    --ink-soft: #B3BBC5;
+    --muted:    #8391A0;
+    --line:     #2C343D;
+    --line-soft:#232A31;
+    --brass:    #C89A5B;
+    --brass-dim:#8A6B3C;
+    --pos:      #5FA37D;
+    --neg:      #D0715A;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 16.5px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding-inline: 20px; padding-block: 0 72px; }
+
+  /* ---------- masthead ---------- */
+  header.top {
+    border-bottom: 1px solid var(--line);
+    padding-block: 44px 0;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: clamp(30px, 6.4vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -.017em;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: 18px;
+    color: var(--ink-soft);
+    margin: 0 0 32px;
+    max-width: 60ch;
+  }
+  .standfirst b { color: var(--ink); font-weight: 600; }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    border-top: 1px solid var(--line-soft);
+  }
+  .fig {
+    padding: 20px 20px 22px 0;
+    border-right: 1px solid var(--line-soft);
+  }
+  .fig:last-child { border-right: 0; }
+  .fig .n {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 27px;
+    letter-spacing: -.02em;
+    display: block;
+    font-variant-numeric: tabular-nums;
+  }
+  .fig .n.pos { color: var(--pos); }
+  .fig .n.brass { color: var(--brass); }
+  .fig .l {
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--muted);
+    display: block;
+    margin-top: 5px;
+    line-height: 1.45;
+  }
+
+  /* ---------- sections ---------- */
+  section { padding-block: 46px 0; }
+  h2 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 23px;
+    letter-spacing: -.011em;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  h2 .idx {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--brass);
+    margin-right: 10px;
+    letter-spacing: 0;
+  }
+  .dek {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0 0 24px;
+    max-width: 62ch;
+  }
+  p { margin: 0 0 16px; max-width: 65ch; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; color: var(--ink-soft); }
+  code, .m {
+    font-family: var(--mono);
+    font-size: .89em;
+    font-variant-numeric: tabular-nums;
+  }
+  code {
+    background: var(--sunken);
+    padding: .1em .36em;
+    border-radius: 2px;
+  }
+  .pos { color: var(--pos); }
+  .neg { color: var(--neg); }
+
+  /* ---------- formula ---------- */
+  .formula {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-left: 2px solid var(--brass);
+    padding: 18px 22px;
+    margin: 0 0 20px;
+    font-family: var(--mono);
+    font-size: 14.5px;
+    line-height: 1.9;
+    overflow-x: auto;
+  }
+  .formula .cmt { color: var(--muted); }
+
+  /* ---------- charts ---------- */
+  figure {
+    margin: 0 0 8px;
+    padding-block: 4px;
+  }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption {
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.55;
+    max-width: 70ch;
+  }
+  .ax { font-family: var(--mono); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .axlabel { font-family: var(--sans); font-size: 11.5px; letter-spacing: .04em; }
+  .vlabel { font-family: var(--mono); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin: 4px 0 16px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 12px; height: 12px; border-radius: 1px; flex: none; }
+
+  /* ---------- tables ---------- */
+  .tw { overflow-x: auto; margin: 0 0 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td {
+    text-align: right;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  th {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .03em;
+    border-bottom: 1px solid var(--line);
+  }
+  th:first-child, td:first-child {
+    text-align: left;
+    font-family: var(--sans);
+    white-space: normal;
+  }
+  tbody tr:hover { background: var(--surface); }
+  tr.hi td { background: var(--surface); font-weight: 600; }
+  tr.hi td:first-child { box-shadow: inset 2px 0 0 var(--brass); }
+  td.b { font-weight: 600; }
+
+  /* ---------- notes / list ---------- */
+  ol.falsified { padding-left: 0; list-style: none; counter-reset: f; margin: 0; }
+  ol.falsified li {
+    counter-increment: f;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line-soft);
+    max-width: 72ch;
+  }
+  ol.falsified li::before {
+    content: counter(f, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--brass-dim);
+    padding-top: 4px;
+  }
+  ol.falsified b { font-weight: 600; }
+  ol.falsified .why { color: var(--muted); display: block; font-size: 14.5px; }
+
+  .kicker {
+    font-family: var(--sans);
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
+  .callout {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 22px 0;
+    margin: 28px 0 0;
+  }
+  .callout p { font-size: 17.5px; max-width: 58ch; }
+
+  footer {
+    margin-top: 54px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 26px;
+  }
+
+  @media (max-width: 560px) {
+    .fig { border-right: 0; border-bottom: 1px solid var(--line-soft); padding-right: 0; }
+    .fig:last-child { border-bottom: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Memzip · 2026-09-20 · 4060 Laptop 8GB</p>
+  <h1>4096 token 压进 32 条 KV，<br>然后它没有崩</h1>
+  <p class="standfirst">
+    冻结整个主干，只训练一个记忆模块——<b>0.03M 到 3.67M 个参数</b>，
+    原模型权重一位不改。状态每 512 token 压缩一次并带着往下滚，预算恒定。
+    八跳之后压缩比 128:1，信息保留率收敛在 50.8% 不再下降。
+  </p>
+  <div class="figures">
+    <div class="fig">
+      <span class="n pos">+50.8%</span>
+      <span class="l">8 跳递归后 recovery<br>128:1，衰减已收敛</span>
+    </div>
+    <div class="fig">
+      <span class="n pos">+104%</span>
+      <span class="l">单段 16:1 recovery<br>超过 100% = 优于原文 KV</span>
+    </div>
+    <div class="fig">
+      <span class="n brass">3.67M</span>
+      <span class="l">可训练参数<br>主干 0 改动</span>
+    </div>
+    <div class="fig">
+      <span class="n">¥0</span>
+      <span class="l">租卡成本<br>全部本地 8GB 卡</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <h2><span class="idx">00</span>指标</h2>
+  <p class="dek">一个比值，量纲是 nats。三个条件下让模型预测同一段后续文本，唯一区别是它能看见什么。</p>
+  <div class="formula">
+    <span class="cmt">upper</span> &nbsp;段 B 看见前 512 token 的全部 KV&nbsp;&nbsp;<span class="cmt">← 什么都没丢</span><br>
+    <span class="cmt">lower</span> &nbsp;段 B 什么都看不见&nbsp;&nbsp;<span class="cmt">← 全丢了</span><br>
+    <span class="cmt">comp</span>  &nbsp;段 B 只看见 k 条压缩后的 KV<br><br>
+    recovery = (lower − comp) / (lower − upper)
+  </div>
+  <p>
+    1.0 表示在该预算下无损，0 表示这些槽位白给。
+    <strong>超过 1.0 是可能的</strong>：记忆槽是朝「对预测下一段最有用」优化的，
+    原文 KV 从来没有为这个目标优化过——压缩顺带做了去噪。
+  </p>
+</section>
+
+<section>
+  <h2><span class="idx">01</span>状态能一直滚下去</h2>
+  <p class="dek">
+    每段 512 token 压成 32 条 KV，下一段带着上一个状态继续压。状态永不增长。
+    误差复合本来是这个方案最该死掉的地方——每一跳都在重新编码一个已经有损的状态。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 720 300" role="img" aria-label="递归压缩 recovery 随跳数的衰减曲线，从 62.9% 降至 50.8% 并收敛">
+      <!-- grid -->
+      <g stroke="var(--line-soft)" stroke-width="1">
+        <line x1="64" y1="40"  x2="690" y2="40"/>
+        <line x1="64" y1="82"  x2="690" y2="82"/>
+        <line x1="64" y1="124" x2="690" y2="124"/>
+        <line x1="64" y1="166" x2="690" y2="166"/>
+        <line x1="64" y1="208" x2="690" y2="208"/>
+      </g>
+      <g class="ax" fill="var(--muted)" text-anchor="end">
+        <text x="54" y="44">70%</text>
+        <text x="54" y="86">65%</text>
+        <text x="54" y="128">60%</text>
+        <text x="54" y="170">55%</text>
+        <text x="54" y="212">50%</text>
+      </g>
+      <!-- asymptote -->
+      <line x1="64" y1="203.8" x2="690" y2="203.8" stroke="var(--brass)" stroke-width="1"
+            stroke-dasharray="2 5" opacity=".75"/>
+      <text class="ax" x="150" y="219" fill="var(--brass)" text-anchor="start">渐近线 ≈50.5%</text>
+      <!-- axis -->
+      <line x1="64" y1="250" x2="690" y2="250" stroke="var(--line)" stroke-width="1"/>
+      <!-- curve -->
+      <polyline fill="none" stroke="var(--pos)" stroke-width="2.25" stroke-linejoin="round"
+        points="64,99.6 153.4,156.8 242.9,174.4 332.3,187.8 421.7,193.7 511.1,196.2 600.6,205.5 690,201.3"/>
+      <g fill="var(--pos)">
+        <circle cx="64"   cy="99.6"  r="4"/>
+        <circle cx="153.4" cy="156.8" r="4"/>
+        <circle cx="242.9" cy="174.4" r="4"/>
+        <circle cx="332.3" cy="187.8" r="4"/>
+        <circle cx="421.7" cy="193.7" r="4"/>
+        <circle cx="511.1" cy="196.2" r="4"/>
+        <circle cx="600.6" cy="205.5" r="4"/>
+        <circle cx="690"  cy="201.3" r="4.8"/>
+      </g>
+      <g class="vlabel" fill="var(--ink)" text-anchor="middle">
+        <text x="72"   y="88" text-anchor="start">62.9</text>
+        <text x="684"  y="188" text-anchor="end">50.8</text>
+      </g>
+      <!-- x labels -->
+      <g class="ax" fill="var(--muted)" text-anchor="middle">
+        <text x="64"   y="268">1</text>
+        <text x="153.4" y="268">2</text>
+        <text x="242.9" y="268">3</text>
+        <text x="332.3" y="268">4</text>
+        <text x="421.7" y="268">5</text>
+        <text x="511.1" y="268">6</text>
+        <text x="600.6" y="268">7</text>
+        <text x="690"  y="268">8</text>
+      </g>
+      <g class="axlabel" fill="var(--muted)" text-anchor="middle">
+        <text x="377" y="288">跳数（每跳 +512 token，预算恒定 32 条）</text>
+      </g>
+      <g class="ax" fill="var(--brass)" text-anchor="middle">
+        <text x="64"  y="30">16:1</text>
+        <text x="690" y="30">128:1</text>
+      </g>
+    </svg>
+    <figcaption>
+      第一跳掉 6.8 个点，之后每跳不到 1 个点，第 5 跳起压平（7→8 还反弹了 0.5，已在噪声内）。
+      衰减次线性。checkpoint 只训练过单跳，8 跳是 zero-shot 外推。
+    </figcaption>
+  </figure>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>跳数</th><th>累计原文</th><th>压缩比</th><th>ppl</th><th>recovery</th><th>相邻衰减</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>512</td><td>16:1</td><td>32.60</td><td class="pos b">+62.9%</td><td>—</td></tr>
+        <tr><td>2</td><td>1024</td><td>32:1</td><td>34.96</td><td class="pos b">+56.1%</td><td class="neg">−6.8</td></tr>
+        <tr><td>3</td><td>1536</td><td>48:1</td><td>35.72</td><td class="pos b">+54.0%</td><td class="neg">−2.1</td></tr>
+        <tr><td>4</td><td>2048</td><td>64:1</td><td>36.30</td><td class="pos b">+52.4%</td><td class="neg">−1.6</td></tr>
+        <tr><td>5</td><td>2560</td><td>80:1</td><td>36.57</td><td class="pos b">+51.7%</td><td class="neg">−0.7</td></tr>
+        <tr><td>6</td><td>3072</td><td>96:1</td><td>36.69</td><td class="pos b">+51.4%</td><td class="neg">−0.3</td></tr>
+        <tr><td>7</td><td>3584</td><td>112:1</td><td>37.08</td><td class="pos b">+50.3%</td><td class="neg">−0.9</td></tr>
+        <tr class="hi"><td>8</td><td>4096</td><td>128:1</td><td>36.91</td><td class="pos b">+50.8%</td><td class="pos">+0.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    参照值：全部 4096 token 原文 KV 的 ppl 是 <span class="m">22.31</span>，
+    什么都不给是 <span class="m">62.06</span>。32 条 KV 把它拉到 <span class="m">36.91</span>。
+  </p>
+  <div class="callout">
+    <p class="kicker">这是要解决的那个问题的形状</p>
+    <p>
+      近几轮保留原文 KV，更早的滚进一个固定预算的抽象状态。
+      KV cache 不再随对话长度线性增长——而这条曲线说明，滚下去不会崩。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="idx">02</span>学习率是决定性的，而且非单调</h2>
+  <p class="dek">
+    同一模型、同一配置、400 步，只改 lr。峰在 5e-3，两侧掉得很陡。
+    在此之前的每一个实验都用 1e-3——那是个坏点。
+  </p>
+  <figure>
+    <svg viewBox="0 0 720 320" role="img" aria-label="recovery 随学习率变化的曲线，峰值在 5e-3，1e-3 和 2e-2 都为负">
+      <g stroke="var(--line-soft)" stroke-width="1">
+        <line x1="70" y1="61.2"  x2="700" y2="61.2"/>
+        <line x1="70" y1="167.1" x2="700" y2="167.1"/>
+        <line x1="70" y1="237.6" x2="700" y2="237.6"/>
+      </g>
+      <!-- zero line -->
+      <line x1="70" y1="96.5" x2="700" y2="96.5" stroke="var(--line)" stroke-width="1.5"/>
+      <text class="ax" x="64" y="100" fill="var(--ink-soft)" text-anchor="end">0</text>
+      <g class="ax" fill="var(--muted)" text-anchor="end">
+        <text x="64" y="65">+50%</text>
+        <text x="64" y="171">−100%</text>
+        <text x="64" y="241">−200%</text>
+      </g>
+      <text class="axlabel" x="70" y="112" fill="var(--muted)">↓ 比完全没有上下文更差</text>
+      <!-- curve -->
+      <polyline fill="none" stroke="var(--brass)" stroke-width="2.25" stroke-linejoin="round"
+        points="92.1,270.1 303.4,59.8 401.7,49.9 492,54.8 668.3,184"/>
+      <g>
+        <circle cx="92.1"  cy="270.1" r="4" fill="var(--neg)"/>
+        <circle cx="303.4" cy="59.8"  r="4" fill="var(--pos)"/>
+        <circle cx="401.7" cy="49.9"  r="5.6" fill="var(--pos)"/>
+        <circle cx="492"   cy="54.8"  r="4" fill="var(--pos)"/>
+        <circle cx="668.3" cy="184"   r="4" fill="var(--neg)"/>
+      </g>
+      <g class="vlabel" text-anchor="middle">
+        <text x="92.1"  y="288" fill="var(--neg)">−246%</text>
+        <text x="303.4" y="48"  fill="var(--pos)">+52%</text>
+        <text x="401.7" y="36"  fill="var(--pos)">+66%</text>
+        <text x="492"   y="43"  fill="var(--pos)">+59%</text>
+        <text x="668.3" y="174" fill="var(--neg)">−124%</text>
+      </g>
+      <line x1="70" y1="300" x2="700" y2="300" stroke="var(--line)" stroke-width="1"/>
+      <g class="ax" fill="var(--muted)" text-anchor="middle">
+        <text x="92.1"  y="316">1e−3</text>
+        <text x="303.4" y="316">3e−3</text>
+        <text x="401.7" y="316">5e−3</text>
+        <text x="492"   y="316">8e−3</text>
+        <text x="668.3" y="316">2e−2</text>
+      </g>
+    </svg>
+    <figcaption>
+      0.6B，主干冻结，flat 记忆，16:1 预算（k=32），400 步。横轴对数。
+      prompt-tuning 量级的参数量需要的 lr 比它跟 LoRA 挂在一起时大得多。
+    </figcaption>
+  </figure>
+  <p>
+    所以「0.6B 太小，学不会自己压缩」是个<strong>错误结论</strong>。
+    同一个 0.6B，换对 lr、冻结主干、加深度记忆，1000 步能到 <span class="pos m">+104%</span>。
+    此前那张按 <span class="m">lr=1e-3</span> 测出来的规模律表已经作废。
+  </p>
+</section>
+
+<section>
+  <h2><span class="idx">03</span>冻结主干不是妥协</h2>
+  <p class="dek">同一 lr、同一步数，唯一区别是主干让不让动。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>设置</th><th>upper</th><th>lower</th><th>gap</th><th>recovery</th></tr></thead>
+      <tbody>
+        <tr class="hi"><td>主干冻结</td><td>3.459</td><td>3.951</td><td>0.492</td><td class="pos b">+66%</td></tr>
+        <tr><td>开 LoRA</td><td>3.037</td><td class="neg b">3.370</td><td class="neg b">0.332</td><td>+8%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    看 LoRA 那行的 <code>lower</code>：<span class="m">3.951 → 3.370</span>。
+    LoRA 没在学压缩，它在做语言建模微调，顺手把「什么都看不见」这个基线抬高了
+    <strong>0.58 nats</strong>，gap 被挤掉三分之一。
+  </p>
+  <p>
+    混合条件训练本来就是为了防这个而加的，<em>没防住</em>——
+    它把题改简单了，recovery 的分母跟着缩水。主干钉死之后 upper / lower 恒定，
+    这个比值才真的只反映压缩能力。所以冻结不只是省显存，它是<strong>唯一干净的测量</strong>。
+  </p>
+</section>
+
+<section>
+  <h2><span class="idx">04</span>深度记忆：给槽位每层一个偏置</h2>
+  <p class="dek">
+    P-tuning v2 式。因果注意力保证前面 512 个真实 token 看不见这些位置，
+    所以主干对普通文本的行为逐位不变——容量全部落在被构建的那个状态里。
+  </p>
+  <div class="legend">
+    <span><i style="background:var(--brass-dim)"></i>flat 0.03M · 400 步</span>
+    <span><i style="background:var(--muted)"></i>flat 0.03M · 1500 步</span>
+    <span><i style="background:var(--brass)"></i>deep 3.67M · 400 步</span>
+    <span><i style="background:var(--pos)"></i>deep 3.67M · 1000 步</span>
+  </div>
+  <figure>
+    <svg viewBox="0 0 720 360" role="img" aria-label="四种配置在四个预算档位上的 recovery 分组柱状图，deep 1000 步全档位最高">
+      <g stroke="var(--line-soft)" stroke-width="1">
+        <line x1="70" y1="43.5" x2="700" y2="43.5"/>
+        <line x1="70" y1="92"   x2="700" y2="92"/>
+      </g>
+      <!-- 100% reference -->
+      <line x1="70" y1="53.2" x2="700" y2="53.2" stroke="var(--brass)" stroke-width="1" stroke-dasharray="2 5"/>
+      <text class="ax" x="700" y="49" fill="var(--brass)" text-anchor="end">100% = 原文 KV</text>
+      <!-- zero -->
+      <line x1="70" y1="141.3" x2="700" y2="141.3" stroke="var(--line)" stroke-width="1.5"/>
+      <g class="ax" fill="var(--muted)" text-anchor="end">
+        <text x="64" y="57">+100%</text>
+        <text x="64" y="96">+50%</text>
+        <text x="64" y="145">0</text>
+        <text x="64" y="215">−100%</text>
+      </g>
+      <line x1="70" y1="211.7" x2="700" y2="211.7" stroke="var(--line-soft)" stroke-width="1"/>
+
+      <!-- group k16 : gx 90.75 -->
+      <rect x="90.75"  y="102.6" width="26" height="38.7"  fill="var(--brass-dim)"/>
+      <rect x="120.75" y="141.3" width="26" height="29.1"  fill="var(--muted)"/>
+      <rect x="150.75" y="141.3" width="26" height="151.6" fill="var(--brass)"/>
+      <rect x="180.75" y="68.2"  width="26" height="73.1"  fill="var(--pos)"/>
+      <text class="vlabel" x="163.75" y="306" fill="var(--neg)" text-anchor="middle">−172</text>
+      <text class="vlabel" x="193.75" y="61" fill="var(--pos)" text-anchor="middle">+83</text>
+
+      <!-- group k32 : gx 248.25 -->
+      <rect x="248.25" y="83.2"  width="26" height="58.1" fill="var(--brass-dim)"/>
+      <rect x="278.25" y="131.7" width="26" height="9.6"  fill="var(--muted)"/>
+      <rect x="308.25" y="62.1"  width="26" height="79.2" fill="var(--brass)"/>
+      <rect x="338.25" y="49.7"  width="26" height="91.6" fill="var(--pos)"/>
+      <text class="vlabel" x="351.25" y="42" fill="var(--pos)" text-anchor="middle">+104</text>
+
+      <!-- group k72 : gx 405.75 -->
+      <rect x="405.75" y="78.8" width="26" height="62.5" fill="var(--brass-dim)"/>
+      <rect x="435.75" y="64.7" width="26" height="76.6" fill="var(--muted)"/>
+      <rect x="465.75" y="49.7" width="26" height="91.6" fill="var(--brass)"/>
+      <rect x="495.75" y="44.4" width="26" height="96.9" fill="var(--pos)"/>
+      <text class="vlabel" x="508.75" y="37" fill="var(--pos)" text-anchor="middle">+110</text>
+
+      <!-- group k128 : gx 563.25 -->
+      <rect x="563.25" y="77"   width="26" height="64.3" fill="var(--brass-dim)"/>
+      <rect x="593.25" y="63"   width="26" height="78.3" fill="var(--muted)"/>
+      <rect x="623.25" y="50.6" width="26" height="90.7" fill="var(--brass)"/>
+      <rect x="653.25" y="43.5" width="26" height="97.8" fill="var(--pos)"/>
+      <text class="vlabel" x="666.25" y="36" fill="var(--pos)" text-anchor="middle">+111</text>
+
+      <line x1="70" y1="330" x2="700" y2="330" stroke="var(--line)" stroke-width="1"/>
+      <g class="axlabel" fill="var(--ink-soft)" text-anchor="middle">
+        <text x="148.75" y="348">k=16 · 32:1</text>
+        <text x="306.25" y="348">k=32 · 16:1</text>
+        <text x="463.75" y="348">k=72 · 7:1</text>
+        <text x="621.25" y="348">k=128 · 4:1</text>
+      </g>
+    </svg>
+    <figcaption>
+      0.6B，主干冻结，lr 5e-3，训练时每步从 16–128 里随机采预算。
+      deep 训久了继续涨，flat 训久了退化：flat 的 3 万个参数不够同时服务所有预算，
+      被迫在预算之间取舍。
+    </figcaption>
+  </figure>
+  <p>
+    k=72 和 k=128 稳定<strong>超过 100%</strong>——几十个学出来的槽位，
+    比把 512 个原文 KV 全给它还好用。
+  </p>
+</section>
+
+<section>
+  <h2><span class="idx">05</span>随机预算是课程学习，不是正则化</h2>
+  <p class="dek">看 k=32 这一档，flat 记忆，主干冻结。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>训练时的预算</th><th>400 步</th><th>1000 步</th><th>1500 步</th></tr></thead>
+      <tbody>
+        <tr><td>固定 k=32</td><td class="neg b">−38%</td><td class="pos b">+78%</td><td>—</td></tr>
+        <tr class="hi"><td>随机 16–128</td><td class="pos b">+66%</td><td>—</td><td>+11%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    同样 400 步，随机预算 <span class="pos m">+66%</span>，固定 k=32 还在 <span class="neg m">−38%</span>。
+    <strong>大预算的样本容易学</strong>，先把「怎么使用记忆槽」这套机制建立起来，再迁移到小预算。
+    代价是训久了大预算会反过来抢容量（1500 步 k=32 掉到 +11%，而 k=128 涨到 +89%）。
+  </p>
+</section>
+
+<section>
+  <h2><span class="idx">06</span>规模用在最难的那一端</h2>
+  <p class="dek">深度记忆 + 冻结主干 + lr 5e-3，随机预算 16–128。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>模型</th><th>步数</th><th>k=16 · 32:1</th><th>k=32 · 16:1</th><th>k=72</th><th>k=128</th></tr></thead>
+      <tbody>
+        <tr><td>0.6B</td><td>400</td><td class="neg b">−172%</td><td class="pos">+90%</td><td class="pos">+104%</td><td class="pos">+103%</td></tr>
+        <tr><td>0.6B</td><td>1000</td><td class="pos b">+83%</td><td class="pos">+104%</td><td class="pos">+110%</td><td class="pos">+111%</td></tr>
+        <tr class="hi"><td>1.7B</td><td>400</td><td class="pos b">+86%</td><td class="pos b">+98.7%</td><td class="pos">+104%</td><td class="pos">+103%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    k=16 在 0.6B / 400 步崩到 <span class="neg m">−172%</span>，在 1.7B / 400 步直接
+    <span class="pos m">+86%</span>。原因是角色冲突：前 16 个槽既要能单独工作，
+    又要在 k=128 时当整体的一部分，0.6B 的容量不够同时扮演两个角色。
+  </p>
+  <p>
+    但 0.6B 补步数也能补上（1000 步 <span class="pos m">+83%</span>）——
+    <strong>规模和步数在这里可以互换</strong>。明确的改进方向是 Matryoshka 式嵌套：
+    让每个前缀子集都单独计一次 loss。
+  </p>
+</section>
+
+<section>
+  <h2><span class="idx">07</span>被证伪的假设</h2>
+  <p class="dek">全部是我自己先提出、然后被自己的实验推翻的。</p>
+  <ol class="falsified">
+    <li><div><b>必须同时训模型，冻结的读端读不懂合成的 KV</b>
+      <span class="why">对外挂 encoder 成立，对记忆 token 不成立：状态由模型自己的前向产生，天生在分布内。冻结 +66%，开 LoRA 只有 +8%。</span></div></li>
+    <li><div><b>0.6B 太小，学不会自己压缩</b>
+      <span class="why">是 lr 选错了。同一个 0.6B 能到 +104%。</span></div></li>
+    <li><div><b>误差复合会让递归压缩崩掉</b>
+      <span class="why">写在 recur.py 注释里的预判。实测衰减次线性且收敛。</span></div></li>
+    <li><div><b>混合条件训练能防止模型作弊改上界</b>
+      <span class="why">没防住。LoRA 照样把 lower 抬了 0.58 nats。</span></div></li>
+    <li><div><b>RoPE 相位对齐是关键</b>
+      <span class="why">消融显示关掉几乎无差别（98.4% vs 97.8%）。</span></div></li>
+    <li><div><b>自编码预热能救小模型的紧预算</b>
+      <span class="why">反而更差，k=16 崩到 −84%。</span></div></li>
+    <li><div><b>ppl 能测出抽象记忆有没有信息</b>
+      <span class="why">probe 显示状态里有信息（48 选 1 达 41.7%），但下游 recovery ≈ 0。信息在里面，接口送不出来。</span></div></li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="idx">08</span>那它到底存了什么</h2>
+  <p class="dek">
+    记忆槽占着 k 个序列位置、有自己的 RoPE 相位，所以「这不就是把 token 压小了吗」
+    是个公道的质问。三个探针，每一个都能让「压缩 token」这个假设以不同方式露馅。
+  </p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>探针</th><th>结果</th><th>随机基线</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>槽位解码回 token</td><td class="b">63.3%</td><td>0.18%</td><td style="text-align:left;font-family:var(--sans)">带实义关键词</td></tr>
+        <tr><td>与原文位置的最近邻</td><td class="b">+0.00 超出</td><td>—</td><td style="text-align:left;font-family:var(--sans)">不是任何位置的副本</td></tr>
+        <tr><td>重建原文</td><td class="neg b">+16.3%</td><td>0</td><td style="text-align:left;font-family:var(--sans)">还原不了</td></tr>
+        <tr class="hi"><td>预测下一段</td><td class="pos b">+104%</td><td>0</td><td style="text-align:left;font-family:var(--sans)">但极其好用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>解码</strong>：把槽位的 hidden state 过一遍 lm_head，top-4 里有 63.3% 的
+    token 出现在原文段落中（随机水平 0.18%，<span class="m">350×</span>），
+    解出来的词有实义——<span class="m">计算 / 帧 / 性能</span>。所以槽位确实携带词汇层面的信息。
+  </p>
+  <p>
+    <strong>最近邻</strong>：槽位的 key 向量与原文各位置的最大余弦是 0.64–0.81，
+    看着像「每个槽就坐在某个原文位置上」。但<em>用同一套槽位去压一段完全无关的文本</em>，
+    数字一模一样（超出量 <span class="m">+0.000 / +0.013 / +0.002</span>）。
+    那个 0.8 只是「所有 key 都住在同一个窄锥里」的几何性质——随机向量只有 0.02–0.06。
+    <strong>槽位不是任何原文位置的副本。</strong>
+  </p>
+  <p>
+    <strong>重建 vs 预测</strong>：同一个状态，还原原文只买回 16.3%，
+    预测下一段却买回 104%。一份有损的文本副本不会有这种落差。
+  </p>
+
+  <div class="callout">
+    <p class="kicker">它是笔记，不是录音</p>
+    <p>
+      笔记上会留关键词，所以解得出实义词；但笔记合成于理解之后，
+      不对应原文的任何一个具体位置；它还原不了原文，却特别好用——
+      因为它从一开始就是为「将来要用」而记的，不是为「存档」而记的。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="idx">09</span>下一步</h2>
+  <p>
+    递归结果是 <em>zero-shot</em> 的——训练时模型从没见过多跳。
+    所以最该做的不是换更大的模型，而是<strong>直接训练递归</strong>：
+    训练时就让状态滚 4 到 8 跳，让模型学会「压缩一个已经被压缩过的东西」。
+    这是整个架构里唯一还没被验证过的部分。
+  </p>
+  <p>
+    至于规模：35B-A3B 在 bf16 下约需 75 GB 显存，MoE 让它的前向快得像一个 3B dense 模型。
+    但「规模和步数可以互换」意味着大模型大概率不是「能不能行」的问题，而是「多快到顶」。
+  </p>
+</section>
+
+<footer>
+  <span>全部实验：RTX 4060 Laptop 8GB</span>
+  <span>Qwen3 0.6B / 1.7B，bf16</span>
+  <span>训练语料：真实对话记录 2.46M 字符</span>
+  <span>段长 512 token</span>
+</footer>
+
+</div>

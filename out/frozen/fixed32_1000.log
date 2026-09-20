@@ -1,0 +1,31 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13071.21it/s]
+LoRA params: 0.00M  (backbone FROZEN) | dtype=bf16
+memory params: 0.033M (flat)
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 376 / eval 24 | seg=512 k=32 (16:1)
+
+[init] upper=3.4589 lower=3.9512 mem=9.3522
+       gap=0.4923 nats  recovery=-1097.1%
+
+[  50] k= 32 up=3.459 low=3.951 mem=5.6632 gap=0.492 recovery=-347.8% | 28s
+[ 100] k= 32 up=3.459 low=3.951 mem=4.8187 gap=0.492 recovery=-176.2% | 57s
+[ 150] k= 32 up=3.459 low=3.951 mem=4.5074 gap=0.492 recovery=-113.0% | 85s
+[ 200] k= 32 up=3.459 low=3.951 mem=4.3444 gap=0.492 recovery=-79.9% | 113s
+[ 250] k= 32 up=3.459 low=3.951 mem=4.1854 gap=0.492 recovery=-47.6% | 142s
+[ 300] k= 32 up=3.459 low=3.951 mem=4.0728 gap=0.492 recovery=-24.7% | 170s
+[ 350] k= 32 up=3.459 low=3.951 mem=3.6731 gap=0.492 recovery=+56.5% | 198s
+[ 400] k= 32 up=3.459 low=3.951 mem=3.6522 gap=0.492 recovery=+60.7% | 227s
+[ 450] k= 32 up=3.459 low=3.951 mem=3.6370 gap=0.492 recovery=+63.8% | 255s
+[ 500] k= 32 up=3.459 low=3.951 mem=3.6206 gap=0.492 recovery=+67.2% | 284s
+[ 550] k= 32 up=3.459 low=3.951 mem=3.6028 gap=0.492 recovery=+70.8% | 312s
+[ 600] k= 32 up=3.459 low=3.951 mem=3.6016 gap=0.492 recovery=+71.0% | 340s
+[ 650] k= 32 up=3.459 low=3.951 mem=3.5951 gap=0.492 recovery=+72.3% | 369s
+[ 700] k= 32 up=3.459 low=3.951 mem=3.5804 gap=0.492 recovery=+75.3% | 397s
+[ 750] k= 32 up=3.459 low=3.951 mem=3.5776 gap=0.492 recovery=+75.9% | 425s
+[ 800] k= 32 up=3.459 low=3.951 mem=3.5744 gap=0.492 recovery=+76.5% | 453s
+[ 850] k= 32 up=3.459 low=3.951 mem=3.5728 gap=0.492 recovery=+76.9% | 482s
+[ 900] k= 32 up=3.459 low=3.951 mem=3.5672 gap=0.492 recovery=+78.0% | 510s
+[ 950] k= 32 up=3.459 low=3.951 mem=3.5650 gap=0.492 recovery=+78.5% | 538s
+[1000] k= 32 up=3.459 low=3.951 mem=3.5659 gap=0.492 recovery=+78.3% | 567s
+
+saved out/memtok_k32_frozen.json

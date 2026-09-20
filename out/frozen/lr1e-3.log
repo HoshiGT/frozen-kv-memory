@@ -1,0 +1,18 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 9589.98it/s]
+LoRA params: 0.00M  (backbone FROZEN) | dtype=bf16
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 376 / eval 24 | seg=512 k=32 (16:1)
+
+[init] upper=3.4589 lower=3.9512 mem=8.7329
+       gap=0.4923 nats  recovery=-971.3%
+
+[  50] k= 32 up=3.459 low=3.951 mem=7.4495 gap=0.492 recovery=-710.6% | k16:-712% k32:-711% k72:+0% k128:-16% | 38s
+[ 100] k= 32 up=3.459 low=3.951 mem=6.0664 gap=0.492 recovery=-429.7% | k16:-484% k32:-430% k72:+37% k128:+34% | 77s
+[ 150] k= 32 up=3.459 low=3.951 mem=5.7166 gap=0.492 recovery=-358.6% | k16:-406% k32:-359% k72:+52% k128:+52% | 116s
+[ 200] k= 32 up=3.459 low=3.951 mem=5.4040 gap=0.492 recovery=-295.1% | k16:-335% k32:-295% k72:+57% k128:+59% | 154s
+[ 250] k= 32 up=3.459 low=3.951 mem=5.3237 gap=0.492 recovery=-278.8% | k16:-318% k32:-279% k72:+63% k128:+63% | 193s
+[ 300] k= 32 up=3.459 low=3.951 mem=5.2097 gap=0.492 recovery=-255.6% | k16:-298% k32:-256% k72:+64% k128:+66% | 231s
+[ 350] k= 32 up=3.459 low=3.951 mem=5.1681 gap=0.492 recovery=-247.2% | k16:-292% k32:-247% k72:+67% k128:+68% | 270s
+[ 400] k= 32 up=3.459 low=3.951 mem=5.1638 gap=0.492 recovery=-246.3% | k16:-292% k32:-246% k72:+67% k128:+69% | 309s
+
+saved out/memtok_k32_frozen.json

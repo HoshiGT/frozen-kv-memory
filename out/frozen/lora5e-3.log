@@ -1,0 +1,19 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 15088.65it/s]
+LoRA params: 20.19M | dtype=bf16
+memory params: 0.131M (flat)
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 376 / eval 24 | seg=512 k=32 (16:1)
+
+[init] upper=3.4589 lower=3.9512 mem=9.0150
+       gap=0.4923 nats  recovery=-1028.6%
+
+[  50] k= 32 up=3.181 low=3.554 mem=4.2514 gap=0.373 recovery=-186.9% | k16:-190% k32:-187% k72:-156% k128:-160% | 47s
+[ 100] k= 32 up=3.119 low=3.453 mem=4.1003 gap=0.333 recovery=-194.3% | k16:-204% k32:-194% k72:+1% k128:-2% | 94s
+[ 150] k= 32 up=3.071 low=3.400 mem=3.3782 gap=0.329 recovery=+6.5% | k16:+5% k32:+7% k72:+4% k128:+0% | 141s
+[ 200] k= 32 up=3.068 low=3.411 mem=3.3911 gap=0.343 recovery=+5.8% | k16:+4% k32:+6% k72:+4% k128:-3% | 189s
+[ 250] k= 32 up=3.073 low=3.410 mem=3.3874 gap=0.338 recovery=+6.8% | k16:+5% k32:+7% k72:+6% k128:+1% | 237s
+[ 300] k= 32 up=3.044 low=3.377 mem=3.3507 gap=0.333 recovery=+8.0% | k16:+6% k32:+8% k72:+8% k128:+4% | 285s
+[ 350] k= 32 up=3.037 low=3.370 mem=3.3440 gap=0.332 recovery=+7.7% | k16:+6% k32:+8% k72:+7% k128:+3% | 332s
+[ 400] k= 32 up=3.037 low=3.370 mem=3.3435 gap=0.332 recovery=+7.9% | k16:+6% k32:+8% k72:+7% k128:+4% | 378s
+
+saved out/memtok_k32.json

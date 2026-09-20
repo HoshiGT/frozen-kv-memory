@@ -1,0 +1,11 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 12872.31it/s]
+Traceback (most recent call last):
+  File "/home/hoshi/Claude/memzip/recur.py", line 139, in <module>
+    main()
+  File "/home/hoshi/Claude/memzip/recur.py", line 86, in main
+    mem.load_state_dict(sd["mem"] if "mem" in sd else sd)
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 2639, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for MemoryTokens:
+	size mismatch for emb: copying a param with shape torch.Size([128, 1024]) from checkpoint, the shape in current model is torch.Size([32, 1024]).
+	size mismatch for deep: copying a param with shape torch.Size([27, 128, 1024]) from checkpoint, the shape in current model is torch.Size([27, 32, 1024]).

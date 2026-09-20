@@ -1,0 +1,11 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 3547.67it/s]
+LoRA params: 0.00M  (backbone FROZEN) | dtype=bf16
+memory params: 7.340M (deep, 27 layers)
+train 52 / eval 8 | seg=512 k=32 (16:1)
+
+[init] upper=3.1551 lower=3.6343 mem=9.8356
+       gap=0.4792 nats  recovery=-1294.0%
+
+[  30] k= 32 up=3.155 low=3.634 mem=3.4375 gap=0.479 recovery=+41.1% | k16:+36% k32:+41% k72:+36% k128:+14% | 41s
+
+saved out/memtok_k32_deep_frozen.json

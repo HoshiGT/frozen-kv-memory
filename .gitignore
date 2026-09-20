@@ -1,0 +1,15 @@
+# The training corpus is real Claude conversation logs -- private, and it
+# contains credentials. Regenerate your own with data.py.
+data/
+
+# Weights: model snapshots and trained checkpoints
+ckpt/
+qwen3-*/
+*.pt
+*.safetensors
+
+# Rented-box logs, kept locally for reference
+out/cloud/
+
+__pycache__/
+.dtype_probe
