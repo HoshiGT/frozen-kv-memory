@@ -1,0 +1,13 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 11751.61it/s]
+init from memtok_17b_deep.pt (128 slots)
+memory params: 7.340M | hops 1-6 | bptt 1 | backbone frozen
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 108 / eval 12 windows of 4608 tokens
+
+[init] | h1(16:1):+112%  h2(32:1):+91%  h4(64:1):+66%  h8(128:1):+61%
+
+[   50] | h1(16:1):+104%  h2(32:1):+92%  h4(64:1):+61%  h8(128:1):+58% | 111s
+[  100] | h1(16:1):+105%  h2(32:1):+96%  h4(64:1):+65%  h8(128:1):+60% | 223s
+[  150] | h1(16:1):+106%  h2(32:1):+98%  h4(64:1):+66%  h8(128:1):+62% | 336s
+
+saved out/recur_k32_h1-6_deep.json

@@ -60,6 +60,11 @@ def main() -> None:
     ap.add_argument("--bptt", type=int, default=2,
                     help="how many trailing hops carry gradient; earlier hops run "
                          "under no_grad so memory stays flat in hop count")
+    ap.add_argument("--pred-len", type=int, default=0,
+                    help="score only this many of the tail's tokens (0 = all). The "
+                         "logits alone are seq*vocab*4 bytes -- 311MB for 512 tokens "
+                         "on a 151k vocab, which is what puts 1.7B over an 8GB card "
+                         "here. Compression ratio is set by seg/k and is untouched.")
     ap.add_argument("--eval-hops", default="1,2,4,8")
     ap.add_argument("--steps", type=int, default=600)
     ap.add_argument("--lr", type=float, default=5e-3)
@@ -104,6 +109,7 @@ def main() -> None:
     print(f"memory params: {sum(p.numel() for p in mem.parameters())/1e6:.3f}M "
           f"| hops {h_lo}-{h_hi} | bptt {args.bptt} | backbone frozen")
 
+    pred_len = args.pred_len or args.seg
     need = args.seg * (max(h_hi, max(eval_hops)) + 1)
     data = load_chunks(tok, need, args.chunks)
     ev, tr = data[: args.eval_n], data[args.eval_n :]
@@ -172,7 +178,7 @@ def main() -> None:
             w = tr[perm[ptr : ptr + 1]].to(dev); ptr += 1
             hops = random.randint(h_lo, h_hi)
             k = random.randint(k_lo, k_hi) if args.k_random else args.k
-            tail = w[:, args.seg * hops : args.seg * (hops + 1)]
+            tail = w[:, args.seg * hops : args.seg * hops + pred_len]
             st = roll(w, hops, k, grad=True)
             loss = seg_b_loss(model, cfg, tail, st, tail_offset(hops, k)) / args.accum
             loss.backward()

@@ -1,0 +1,19 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 7536.09it/s]
+36 segments | blocks=8 | k 16 vs 128
+
+  spread : 0.169 .. 0.222   mean 0.188
+  hunger : -0.021 .. +0.118 nats   mean +0.038
+  gap    : 0.077 .. 0.444 nats   mean 0.252
+  selfCE : 2.482 .. 4.234 nats   mean 3.664
+  recovery@16 : +165.1%   recovery@128: +183.3%
+
+  Spearman(spread, hunger_nats) = -0.097
+  Spearman(spread, gap)         = +0.004   (does spread predict how useful the context is at all)
+  Spearman(gap, hunger_nats)    = -0.124   (do informative segments want more slots)
+  Spearman(selfCE, hunger_nats) = -0.123   (do surprising segments want more slots)
+  Spearman(selfCE, spread)      = -0.357   (are the two cheap signals even measuring the same thing)
+  positive => topic-spread segments need more slots, i.e. budget
+             should follow content, and spread can decide it cheaply
+
+  predictable (low CE) selfCE 3.384  rec@16 +174.1%  rec@128 +193.9%  hunger +0.043 nats
+  surprising (high CE) selfCE 3.944  rec@16 +156.1%  rec@128 +172.7%  hunger +0.034 nats
