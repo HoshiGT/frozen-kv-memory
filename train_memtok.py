@@ -290,7 +290,13 @@ def main() -> None:
                     f"k{kk}:{(e['lower']-v)/e['gap']:+.0%}" for kk, v in cur.items())
             print(line + f" | {time.time()-t0:.0f}s")
 
-    tag = f"k{args.k}" + (f"_curr{k_start}-{k_end}" if args.k_curriculum else "")
+    # The corpus belongs in the filename. A memory module is domain-specific
+    # (+53.5% on dialogue against -54.4% on novels with one checkpoint), and two
+    # domains sharing a name silently destroyed a trained checkpoint once.
+    import os
+    _dom = os.environ.get("MEMZIP_DATA", "data")
+    tag = f"k{args.k}" + ("" if _dom == "data" else f"_{_dom}")
+    tag += f"_curr{k_start}-{k_end}" if args.k_curriculum else ""
     if args.mem_depth:
         tag += "_deep"
     if args.load_4bit:

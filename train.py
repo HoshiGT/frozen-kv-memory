@@ -36,7 +36,13 @@ HERE = Path(__file__).resolve().parent
 def load_chunks(tok, seg: int, limit: int) -> torch.Tensor:
     L = seg * 2
     out = []
-    for p in sorted((HERE / "data").glob("*.txt")):
+    # MEMZIP_DATA points the loader at a different corpus without touching any
+    # call site: the memory module is domain-specific (dialogue +53.5% against
+    # -54.4% on novels with the same checkpoint), so retraining per domain is
+    # the expected workflow rather than an edge case.
+    import os
+    _dir = HERE / os.environ.get("MEMZIP_DATA", "data")
+    for p in sorted(_dir.glob("*.txt")):
         ids = tok(p.read_text(encoding="utf-8"), return_tensors="pt").input_ids[0]
         for s in range(0, len(ids) - L, L):
             out.append(ids[s : s + L])

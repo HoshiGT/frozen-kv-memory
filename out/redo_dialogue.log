@@ -1,0 +1,31 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13636.52it/s]
+LoRA params: 0.00M  (backbone FROZEN) | dtype=bf16
+memory params: 3.670M (deep, 27 layers)
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 376 / eval 24 | seg=512 k=32 (16:1)
+
+[init] upper=3.4589 lower=3.9512 mem=9.2033
+       gap=0.4923 nats  recovery=-1066.9%
+
+[  50] k= 32 up=3.459 low=3.951 mem=3.8333 gap=0.492 recovery=+23.9% | k16:-537% k32:+24% k72:+32% k128:+21% | 37s
+[ 100] k= 32 up=3.459 low=3.951 mem=3.6748 gap=0.492 recovery=+56.2% | k16:-329% k32:+56% k72:+67% k128:+66% | 74s
+[ 150] k= 32 up=3.459 low=3.951 mem=3.6629 gap=0.492 recovery=+58.6% | k16:-142% k32:+59% k72:+78% k128:+79% | 111s
+[ 200] k= 32 up=3.459 low=3.951 mem=3.6196 gap=0.492 recovery=+67.4% | k16:-90% k32:+67% k72:+89% k128:+90% | 148s
+[ 250] k= 32 up=3.459 low=3.951 mem=3.5889 gap=0.492 recovery=+73.6% | k16:-56% k32:+74% k72:+98% k128:+98% | 185s
+[ 300] k= 32 up=3.459 low=3.951 mem=3.5765 gap=0.492 recovery=+76.1% | k16:-26% k32:+76% k72:+100% k128:+100% | 222s
+[ 350] k= 32 up=3.459 low=3.951 mem=3.5607 gap=0.492 recovery=+79.3% | k16:-9% k32:+79% k72:+103% k128:+83% | 259s
+[ 400] k= 32 up=3.459 low=3.951 mem=3.5395 gap=0.492 recovery=+83.6% | k16:+6% k32:+84% k72:+103% k128:+104% | 296s
+[ 450] k= 32 up=3.459 low=3.951 mem=3.5357 gap=0.492 recovery=+84.4% | k16:+3% k32:+84% k72:+106% k128:+107% | 334s
+[ 500] k= 32 up=3.459 low=3.951 mem=3.5420 gap=0.492 recovery=+83.1% | k16:+10% k32:+83% k72:+106% k128:+106% | 371s
+[ 550] k= 32 up=3.459 low=3.951 mem=3.5163 gap=0.492 recovery=+88.3% | k16:+22% k32:+88% k72:+109% k128:+110% | 408s
+[ 600] k= 32 up=3.459 low=3.951 mem=3.5133 gap=0.492 recovery=+88.9% | k16:+24% k32:+89% k72:+109% k128:+109% | 445s
+[ 650] k= 32 up=3.459 low=3.951 mem=3.5045 gap=0.492 recovery=+90.7% | k16:+28% k32:+91% k72:+110% k128:+111% | 482s
+[ 700] k= 32 up=3.459 low=3.951 mem=3.4965 gap=0.492 recovery=+92.4% | k16:+32% k32:+92% k72:+111% k128:+111% | 519s
+[ 750] k= 32 up=3.459 low=3.951 mem=3.4904 gap=0.492 recovery=+93.6% | k16:+35% k32:+94% k72:+111% k128:+111% | 556s
+[ 800] k= 32 up=3.459 low=3.951 mem=3.4878 gap=0.492 recovery=+94.1% | k16:+35% k32:+94% k72:+110% k128:+111% | 593s
+[ 850] k= 32 up=3.459 low=3.951 mem=3.4856 gap=0.492 recovery=+94.6% | k16:+36% k32:+95% k72:+111% k128:+112% | 630s
+[ 900] k= 32 up=3.459 low=3.951 mem=3.4842 gap=0.492 recovery=+94.9% | k16:+38% k32:+95% k72:+111% k128:+112% | 668s
+[ 950] k= 32 up=3.459 low=3.951 mem=3.4833 gap=0.492 recovery=+95.0% | k16:+38% k32:+95% k72:+111% k128:+112% | 705s
+[1000] k= 32 up=3.459 low=3.951 mem=3.4834 gap=0.492 recovery=+95.0% | k16:+38% k32:+95% k72:+111% k128:+112% | 742s
+
+saved out/memtok_k32_deep_frozen.json
