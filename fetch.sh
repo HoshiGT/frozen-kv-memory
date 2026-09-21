@@ -3,7 +3,7 @@
 # here, so detect the stall (--speed-limit/--speed-time) and reconnect with
 # byte-range resume instead of waiting on a dead socket.
 set -u
-F=/home/hoshi/Claude/memzip/qwen3-0.6b/model.safetensors
+F=./qwen3-0.6b/model.safetensors
 TOTAL=1503300328
 URLS=(
   "https://hf-mirror.com/Qwen/Qwen3-0.6B/resolve/main/model.safetensors"

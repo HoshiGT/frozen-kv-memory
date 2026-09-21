@@ -2,7 +2,7 @@
 # Same resume-until-complete loop as the 0.6B pull: the connection dies
 # mid-transfer from here, so detect the stall and reconnect with byte ranges.
 set -u
-D=/home/hoshi/Claude/memzip/qwen3-1.7b
+D=./qwen3-1.7b
 B=https://huggingface.co/Qwen/Qwen3-1.7B/resolve/main
 M=https://hf-mirror.com/Qwen/Qwen3-1.7B/resolve/main
 for f in model-00001-of-00002.safetensors model-00002-of-00002.safetensors; do
