@@ -78,6 +78,20 @@ def query_anchors(model, cfg, full, ctx_len: int, probe: torch.Tensor,
         score = att.softmax(-1).sum(dim=(0, 1))        # total attention received
     head = torch.arange(min(sink, ctx_len), device=probe.device)
     score[:sink] = float("-inf")                           # sink is kept anyway
+    if args is not None and getattr(args, "block", 0) > 1:
+        # Retrieve contiguous spans instead of scattered tokens. A single
+        # token's KV is a fragment of a phrase; the span it sits in is the unit
+        # that actually carries meaning, and attention can use a span the way it
+        # was written. Scored by the best position in each span, since one
+        # strongly wanted token is reason enough to page in its neighbours.
+        b = args.block
+        nb = ctx_len // b
+        head = torch.arange(min(sink, ctx_len), device=probe.device)
+        bs = score[: nb * b].view(nb, b).amax(-1)
+        bs[: max(1, sink // b)] = float("-inf")        # opening handled by sink
+        pick = bs.topk(min(max(0, (n - len(head)) // b), nb)).indices
+        span = (pick[:, None] * b + torch.arange(b, device=probe.device)[None, :]).reshape(-1)
+        return torch.cat([head, span]).unique().sort().values
     if restrict is not None:
         # two-stage: surprisal already decided what is worth keeping at all,
         # the query only decides which of those to page in now
@@ -90,6 +104,52 @@ def query_anchors(model, cfg, full, ctx_len: int, probe: torch.Tensor,
         avail = ctx_len - sink
     top = score.topk(min(max(0, n - len(head)), avail)).indices
     return torch.cat([head, top]).sort().values
+
+
+def speculate(model, cfg, base, start: torch.Tensor, offset: int, n_tok: int,
+              n_samples: int = 1, temp: float = 0.0):
+    """Let the abstract state imagine the continuation, and use that as the query.
+
+    Every deployable signal so far knows only the past: surprisal is what
+    reading was like, attention is what the prefix wants now. The oracle's whole
+    advantage is knowing what the continuation will need. But the state is not
+    ignorant of that -- it recovers novel tokens at +231%, which is precisely a
+    claim to know where the text is heading.
+
+    So ask it. Generate from state+anchors alone, greedily, and retrieve against
+    what it produced. The guesses will often be wrong token-for-token; they only
+    have to be right about the topic to pull in the right region of context.
+    """
+    from train import cache_from
+
+    runs = []
+    for r in range(n_samples):
+        cache = cache_from([(kk.clone(), vv.clone()) for kk, vv in base], cfg)
+        plen = base[0][0].shape[2]
+        ids, out_ids = start, []
+        for i in range(n_tok):
+            pos = torch.arange(offset + len(out_ids),
+                               offset + len(out_ids) + ids.shape[1], device=ids.device)
+            o = model(input_ids=ids, position_ids=pos.unsqueeze(0),
+                      past_key_values=cache, use_cache=True,
+                      cache_position=torch.arange(plen, plen + ids.shape[1],
+                                                  device=ids.device),
+                      attention_mask=torch.ones(1, plen + ids.shape[1],
+                                                device=ids.device, dtype=torch.long))
+            cache = o.past_key_values
+            plen += ids.shape[1]
+            lg = o.logits[:, -1]
+            # the first run stays greedy so the best single guess is always in
+            # the set; the rest diverge, because what matters is covering the
+            # ways the text could go, not the single likeliest one
+            if temp > 0 and r > 0:
+                nxt = torch.multinomial((lg / temp).softmax(-1), 1)
+            else:
+                nxt = lg.argmax(-1, keepdim=True)
+            out_ids.append(nxt)
+            ids = nxt
+        runs.append(torch.cat(out_ids, dim=1))
+    return torch.cat(runs, dim=1)
 
 
 def surprisal_anchors(model, cfg, ctx: torch.Tensor, n: int, sink: int = 4,
@@ -172,6 +232,23 @@ def pick_anchors(ids: torch.Tensor, n: int, max_count: int = 5,
     return torch.tensor(keep, dtype=torch.long, device=ids.device)
 
 
+def report_by_spread(per_window, spreads, conds):
+    """Same numbers, split by whether the context stayed on one subject."""
+    order = sorted(range(len(spreads)), key=lambda i: spreads[i])
+    half = len(order) // 2
+    print("\n=== split by topic spread ===")
+    for name, idx in (("single-topic", order[:half]), ("multi-topic", order[half:])):
+        lo = sum(per_window[i]["lower"] for i in idx) / len(idx)
+        up = sum(per_window[i]["upper"] for i in idx) / len(idx)
+        gap = lo - up
+        sp = sum(spreads[i] for i in idx) / len(idx)
+        parts = []
+        for c, label in conds:
+            m = sum(per_window[i][c] for i in idx) / len(idx)
+            parts.append(f"{label} {(lo - m) / gap:+.1%}")
+        print(f"  {name:<13} spread={sp:.3f} gap={gap:.3f}  " + "  ".join(parts))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seg", type=int, default=512)
@@ -185,6 +262,15 @@ def main() -> None:
     ap.add_argument("--probe", type=int, default=32,
                     help="how many tail tokens act as the retrieval query; a decoder "
                          "has these already, so using them is not cheating")
+    ap.add_argument("--block", type=int, default=1,
+                    help="retrieve contiguous spans of this many tokens instead of "
+                         "individual positions")
+    ap.add_argument("--spec-rounds", type=int, default=1,
+                    help="draft-then-retrieve rounds; each extra round re-drafts "
+                         "with the anchors the previous one found")
+    ap.add_argument("--spec-samples", type=int, default=1,
+                    help="how many continuations to imagine; >1 diverges by sampling")
+    ap.add_argument("--spec-temp", type=float, default=1.0)
     ap.add_argument("--pool", type=int, default=512,
                     help="how many positions surprisal pins at encoding time; the "
                          "query then pages in --anchors of them")
@@ -238,10 +324,12 @@ def main() -> None:
                              past=state, past_len=past_len, grad=False, k=k)
         return state
 
+    per_window = []
+    spreads = []
     tot = dict.fromkeys(
         ["upper", "lower", "abstract_all", "abstract_accum",
          "anchors_only", "hybrid", "query_hybrid",
-         "chunked_query", "surprisal_hybrid", "two_stage",
+         "chunked_query", "surprisal_hybrid", "two_stage", "speculative",
          "oracle_only", "oracle_hybrid"], 0.0)
     n_anchor = 0
     with torch.no_grad():
@@ -249,16 +337,26 @@ def main() -> None:
             w = data[i : i + 1].to(dev)
             ctx, tail = w[:, :cut], w[:, cut : cut + args.seg]
             full = [(l.keys, l.values) for l in model(ctx, use_cache=True).past_key_values.layers]
+            row = {}
+            # topic spread of this window: block means at a middle layer, mean
+            # pairwise cosine distance. Low = the context stays on one subject.
+            hs = model(ctx, output_hidden_states=True).hidden_states[
+                cfg.num_hidden_layers // 2][0]
+            nb, bl = 16, ctx.shape[1] // 16
+            bmean = F.normalize(hs[: nb * bl].view(nb, bl, -1).mean(1).float(), dim=-1)
+            sim = bmean @ bmean.T
+            off = ~torch.eye(nb, dtype=torch.bool, device=dev)
+            spreads.append((1 - sim[off]).mean().item())
 
-            tot["upper"] += seg_b_loss(model, cfg, tail, full, cut).item()
-            tot["lower"] += seg_b_loss(model, cfg, tail, None, cut).item()
+            row["upper"] = seg_b_loss(model, cfg, tail, full, cut).item()
+            row["lower"] = seg_b_loss(model, cfg, tail, None, cut).item()
 
             # the whole budget spent on abstraction -- the thing to beat
             st_all = roll(w, total_budget)
             tot["abstract_all"] += seg_b_loss(
                 model, cfg, tail, st_all, args.seg + 2 * total_budget).item()
             st_acc = roll(w, total_budget, accum=True)
-            tot["abstract_accum"] += seg_b_loss(
+            row["abstract_accum"] = seg_b_loss(
                 model, cfg, tail, st_acc, cut + total_budget).item()
 
             idx = pick_anchors(ctx, args.anchors, args.max_count, args.sink)
@@ -313,7 +411,7 @@ def main() -> None:
             sanc = [(kk[:, :, sidx], vv[:, :, sidx]) for kk, vv in full]
             smix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
                     for (ak, av), (sk, sv) in zip(sanc, st)]
-            tot["surprisal_hybrid"] += seg_b_loss(
+            row["surprisal_hybrid"] = seg_b_loss(
                 model, cfg, tail, smix, cut + args.k).item()
 
             # write with surprisal, read with the query: a large pool is pinned
@@ -327,13 +425,45 @@ def main() -> None:
             tot["two_stage"] += seg_b_loss(
                 model, cfg, tail, tmix, cut + args.k).item()
 
+            # speculative retrieval: one real token of prefix, the rest imagined
+            sink_only = torch.arange(args.sink, device=dev)
+            base = [(torch.cat([kk[:, :, sink_only], sk], dim=2),
+                     torch.cat([vv[:, :, sink_only], sv], dim=2))
+                    for (kk, vv), (sk, sv) in zip(full, st)]
+            # Iterative: the first draft is written without anchors, so it
+            # necessarily guesses wrong exactly where precise recall was needed
+            # -- which is where retrieval matters most. Drafting again with the
+            # anchors that first pass pulled in gives a query that is right
+            # about more of the specifics, so the second retrieval is sharper.
+            # Each round costs one more draft pass; nothing else changes.
+            ctxk = base
+            for _ in range(args.spec_rounds):
+                with torch.no_grad():
+                    guess = speculate(model, cfg, ctxk, tail[:, :1],
+                                      cut + args.k, args.probe,
+                                      args.spec_samples, args.spec_temp)
+                pidx = query_anchors(model, cfg, full, cut, guess,
+                                     args.anchors, args.sink, args)
+                panc = [(kk[:, :, pidx], vv[:, :, pidx]) for kk, vv in full]
+                ctxk = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
+                        for (ak, av), (sk, sv) in zip(panc, st)]
+            pmix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
+                    for (ak, av), (sk, sv) in zip(panc, st)]
+            row["speculative"] = seg_b_loss(
+                model, cfg, tail, pmix, cut + args.k).item()
+
             oidx = oracle_anchors(ctx, tail, args.anchors, args.sink)
             oanc = [(kk[:, :, oidx], vv[:, :, oidx]) for kk, vv in full]
             tot["oracle_only"] += seg_b_loss(model, cfg, tail, oanc, cut).item()
             omix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
                     for (ak, av), (sk, sv) in zip(oanc, st)]
-            tot["oracle_hybrid"] += seg_b_loss(
+            row["oracle_hybrid"] = seg_b_loss(
                 model, cfg, tail, omix, cut + args.k).item()
+
+            # per-window rows feed the topic split; the totals still come from them
+            for kk, vv in row.items():
+                tot[kk] = tot.get(kk, 0.0) + vv
+            per_window.append(row)
 
     n = len(data)
     for kk in tot:
@@ -352,10 +482,20 @@ def main() -> None:
                         ("chunked_query", f"{args.anchors} QUERY re-retrieved/{args.chunk}"),
                         ("surprisal_hybrid", f"{args.anchors} SURPRISAL + {args.k} abstract"),
                         ("two_stage", f"SURPRISAL{args.pool}->QUERY{args.anchors} + {args.k}"),
+                        ("speculative",
+                         f"SPECULATIVE r{args.spec_rounds} "
+                         f"{args.spec_samples}x{args.probe} + {args.k}"),
                         ("oracle_only", f"{args.anchors} ORACLE anchors only"),
                         ("oracle_hybrid", f"{args.anchors} ORACLE + {args.k} abstract")):
         ce = tot[name]
         print(f"  {label:<26} {ce:8.4f} {(tot['lower']-ce)/gap:+9.1%}")
+    report_by_spread(per_window, spreads,
+                     [("abstract_accum", "abstract"), ("surprisal_hybrid", "surprisal"),
+                      ("speculative", "specul"), ("oracle_hybrid", "oracle")])
+
+
+if __name__ == "__main__":
+    main()
 
 
 if __name__ == "__main__":
