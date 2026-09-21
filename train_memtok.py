@@ -88,8 +88,18 @@ def main() -> None:
     ap.add_argument("--dtype", default="bf16", choices=["bf16", "fp16", "fp32"],
                     help="V100 is Volta: it has fp16 tensor cores but no bf16, so "
                          "renting one means fp16 + loss scaling")
+    ap.add_argument("--seed", type=int, default=-1,
+                    help="fixes the budget sampling and data order. Retraining one "
+                         "config with a different seed moved k16 by 45 points, so "
+                         "any conclusion resting on a few points needs several of "
+                         "these before it means anything.")
     ap.add_argument("--model", default=str(HERE / "qwen3-0.6b"))
     args = ap.parse_args()
+
+    if args.seed >= 0:
+        random.seed(args.seed)
+        torch.manual_seed(args.seed)
+        torch.cuda.manual_seed_all(args.seed)
 
     dev = "cuda"
     DT = {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}[args.dtype]
@@ -296,6 +306,7 @@ def main() -> None:
     import os
     _dom = os.environ.get("MEMZIP_DATA", "data")
     tag = f"k{args.k}" + ("" if _dom == "data" else f"_{_dom}")
+    tag += "" if args.seed < 0 else f"_s{args.seed}"
     tag += f"_curr{k_start}-{k_end}" if args.k_curriculum else ""
     if args.mem_depth:
         tag += "_deep"

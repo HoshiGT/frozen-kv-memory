@@ -51,6 +51,10 @@ KV 是 torch tensor，而且有独立的 cache pool 抽象——和 llama.cpp �
    主要时间在下 70GB 权重；GGUF 训不了）
 2. 本地 FreeToken 推理时加载它
 
+**接口调查已完成**（2026-09-21，见 `docs/freetoken-integration.md`）：
+`store_kv` / `k_cache` / `v_cache` 都现成，`qwen3_5_moe` 就是目标架构；
+唯一缺的是 embedding 入口，而 `gemma4` 的 `mm_embeds` 是现成模板，改十几行。
+
 **加内存后要先确认的**（在花钱之前）：
 - `freetoken/kvcache/*_pool.py` 能不能写入外部构造的 KV
 - 能不能用 `inputs_embeds` 喂 memory token（compress 需要）
