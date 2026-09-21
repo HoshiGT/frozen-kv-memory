@@ -11,89 +11,46 @@ python hybrid.py --k 64 --anchors 512 --probe 128 --hops 8
 
 架构：64 抽象槽常驻 + 原文 KV offload + 按 speculative query 调入 512 条。
 
-## 已完成（2026-09-21 下午）
+## 已完成（2026-09-21）
 
-1. ~~训练 anchor-aware 的记忆模块~~ → **负面**。hybrid 没涨，solo 掉 33 点。
-   分工是自发的，梯度本来就不会往 anchor 已覆盖的地方使劲。原 ckpt 仍是最优。
-2. ~~1.7B 跨规模验证~~ → speculative +86.2%（0.6B 是 +86.8%），保持。
-3. ~~打包~~ → `memory.py` + `README-usage.md`，自检 7 MB 常驻 / 448 MB offload / +85.2%。
-4. ~~更新报告页~~ → v3 已重写，主线改为"压缩 + 检索"。
+**上午—下午**
+1. ~~anchor-aware 训练~~ → 负面，分工是自发的
+2. ~~1.7B / 4B 跨规模~~ → 三个规模点全部持平，规模线结案
+3. ~~打包~~ → `memory.py` + `README-usage.md`
+4. ~~报告页~~ → v4（已修正 64× 的错误说法）
 
-## 现在在查
+**傍晚—晚上**
+5. ~~有效窗口~~ → 只有一段；滚动在稀释，`memory.py` 已改成一次压缩
+6. ~~分层 / 主题召回~~ → 都不如不加
+7. ~~跨域~~ → 状态域特定（对话 +53.5% / 小说 −54.4%），重训 12 分钟可解
+8. ~~三种子方差~~ → k16 极差 51 点，混合架构 1.5–2.3 点；结论已按方差重新分类
+9. ~~文献调研~~ → 交给 Grok，`docs/LITERATURE-*.md`，Q1/Q2 仍空、Q3 需降级
+10. ~~FreeToken 接口调查~~ → `docs/freetoken-integration.md`，缺一个 embedding 入口
 
-**长上下文下选择策略失效**：8192 token 时 speculative 掉到 +72.2%，
-而 oracle 仍有 +94.7%——不是装不下，是选不准。
+## 下一步
 
-判别法：8192 配 512 anchor 只有 6.25% 覆盖率，4096 配 512 是 12.5%。
-按比例给到 1024 条，覆盖率追平：
+**A. 论文（定位已收敛）**
 
-- **恢复** → 是覆盖率问题，加预算能解决
-- **不恢复** → 选择本身在长上下文下退化，需要新方法
+主贡献是两个诊断，不是新方法：
+- **(a)** 按 token 可复制性拆解天花板
+- **(b)** 检索 / 压缩 / oracle 的加法分解
 
-## Airi 落地：等 10 月中加内存条
+(c) 冻结主干的测量论点**要降级并正面引用**
+CCM [2312.03414]（观察过同一现象，归因为训练过拟合）和
+No Mean Feat [2510.20797]（用了几乎相同的归一化公式）。
+用"据我们所知"，不用"首次"。
 
-目标模型是 **Qwen3.6-35B-A3B**，推理端用 **FreeToken**（专家在 CPU、激活参数在 GPU）。
-现在 15G 内存不够（FreeToken 会 pin 全部专家 19G），等 10 月中加条子。
+**不要**写"我们独立想到、实现中才发现前人工作"——时间上我们在后面，
+这种声明会被读成辩解，而且诊断类工作本来就不需要主张方法首创权。
+那个过程属于 README 和 git 历史，不属于论文。
 
-**关键判断：FreeToken 是 torch 生态的，路线大概率通。**
+还缺：LongBench / RULER（选 gap 大的任务）、H2O / SnapKV baseline、8B 规模点。
 
-```
-依赖: torch, transformers, triton, safetensors, gguf ...
-freetoken/kvcache/: mha_pool.py  dsa_pool.py  hybrid_swa_pool.py  cache_status.py
-```
+**B. Airi 落地**：等 10 月中加内存，按 `docs/freetoken-integration.md` 验三个接口，
+通过再租 96G 训 35B 记忆模块。**先验接口再训模型。**
 
-KV 是 torch tensor，而且有独立的 cache pool 抽象——和 llama.cpp 完全不同
-（llama.cpp 不暴露 KV 注入，这条路是死的）。
-
-**训练和推理可以分离**：记忆模块只是个 3.67M 的权重文件。
-
-1. 租 96G 卡，PyTorch bf16 训 35B 的记忆模块（~75GB 显存，2–3 小时，
-   主要时间在下 70GB 权重；GGUF 训不了）
-2. 本地 FreeToken 推理时加载它
-
-**接口调查已完成**（2026-09-21，见 `docs/freetoken-integration.md`）：
-`store_kv` / `k_cache` / `v_cache` 都现成，`qwen3_5_moe` 就是目标架构；
-唯一缺的是 embedding 入口，而 `gemma4` 的 `mm_embeds` 是现成模板，改十几行。
-
-**加内存后要先确认的**（在花钱之前）：
-- `freetoken/kvcache/*_pool.py` 能不能写入外部构造的 KV
-- 能不能用 `inputs_embeds` 喂 memory token（compress 需要）
-- 能不能拿到某些位置的 KV 切片（anchor 需要）
-
-这三样有一样不行，就得改 FreeToken 或者换推理端。**先验接口，再训模型。**
-
-## 文献工作（论文的前置条件，明天专门做）
-
-2026-09-21 傍晚粗查了三个自以为是贡献的方向，**两个半站不住**：
-
-| 方向 | 真实状况 |
-|---|---|
-| 任务 gap 决定压缩效果 | **已有系统研究**，有专门 benchmark（arXiv 2607.05399：GovReport 14.2× vs NarrativeQA 几乎压不动） |
-| 滚动记忆有效窗口有限 | 现象**已知**（Compressive Transformer / RMT / LCIRC 一脉） |
-| 冻结主干才测得准 | 搜不到对应工作——但**搜索第一条是我们自己的仓库**，没有证明力 |
-
-还撞上 Self-Pruned KV（arXiv 2605.14037）：学一个 utility predictor 决定保留哪些 KV，
-backbone 联合微调，3–10×。与我们的 anchor 选择方向重合。
-
-**尚未查过、可能才是真贡献的两条**：
-
-- **天花板的成分分解**：按"答案是否可从上下文复制"、按出现频次拆开 recovery
-- **贡献分解**：检索 46.1 / 压缩 38.8 / oracle 上界 19.0，用完美选择定天花板
-
-这两条是"把方法拆开看里面装了什么"，不是提新方法，少见得多。
-
-**方法论论点需要限定**：LoRA 污染只对**相对指标**成立
-（`recovery = (lower−comp)/(lower−upper)`，微调抬高 lower 缩小分母）。
-报绝对指标（任务准确率）的工作不受此影响。不加这个限定，第一个审稿人就会指出来。
-
-**要做的**：把 KV 压缩这几年的主要工作过一遍建表，
-而不是搜三下。在写任何论文内容之前做。
-
-## 还没做
-
-- anchor 预算扩展律：512 → 1024 → 2048，什么时候追平 upper
-- Matryoshka 嵌套（解决 k=16 角色冲突，优先级低）
-- 换领域验证：现在的 ckpt 只在真实对话语料上训过
+**C. 工程余量**：offload KV 的 4bit 量化（896M→224M）、检索结果跨 token 缓存。
+质量已基本榨干，剩下的都是延迟和内存。
 
 ## 环境备忘
 
