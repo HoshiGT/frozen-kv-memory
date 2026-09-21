@@ -1,0 +1,32 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights:  81%|████████  | 251/311 [00:00<00:00, 2444.23it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 2556.07it/s]
+12 windows | 8 hops over 4096 tokens
+budget 576 = 512 anchors + 64 abstract (7:1)
+
+Traceback (most recent call last):
+  File "/home/hoshi/Claude/memzip/hybrid.py", line 498, in <module>
+    main()
+  File "/home/hoshi/Claude/memzip/hybrid.py", line 343, in main
+    hs = model(ctx, output_hidden_states=True).hidden_states[
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/transformers/utils/generic.py", line 939, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/transformers/models/qwen3/modeling_qwen3.py", line 495, in forward
+    logits = self.lm_head(hidden_states[:, slice_indices, :])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoshi/ctfenv/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.16 GiB. GPU 0 has a total capacity of 7.65 GiB of which 827.94 MiB is free. Including non-PyTorch memory, this process has 6.82 GiB memory in use. Of the allocated memory 5.69 GiB is allocated by PyTorch, and 1.01 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)

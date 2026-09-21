@@ -32,6 +32,7 @@ import torch
 import torch.nn.functional as F
 
 from diagnose import per_token_ce
+from memory import kv_only
 from memtok import MemoryTokens, compress, _layers
 from train import load_chunks, seg_b_loss
 
@@ -171,7 +172,10 @@ def surprisal_anchors(model, cfg, ctx: torch.Tensor, n: int, sink: int = 4,
     over hidden states that cost a thousandth of that.
     """
     with torch.no_grad():
-        h = model(ctx, output_hidden_states=True).hidden_states[-1][0]
+        # the inner model stops before the head: asking the wrapper for hidden
+        # states still computes a 151k-way distribution at all 4096 positions,
+        # 1.16GB that is thrown away, and then this chunks the head itself anyway
+        h = model.model(input_ids=ctx, output_hidden_states=True).hidden_states[-1][0]
         h = model.model.norm(h)
         ces = []
         for i in range(0, len(h) - 1, chunk):
@@ -305,7 +309,10 @@ def main() -> None:
     print(f"budget {total_budget} = {args.anchors} anchors + {args.k} abstract "
           f"({cut/total_budget:.0f}:1)\n")
 
-    def roll(w, k, accum=False):
+    rnd_mem = MemoryTokens(mem.emb.shape[0], cfg.hidden_size,
+                           depth=0 if mem.deep is None else mem.deep.shape[0]).to(dev)
+
+    def roll(w, k, accum=False, use_random=False):
         """accum: let positions advance with the text instead of resetting.
 
         The compact convention (state always at the front, positions reset each
@@ -320,7 +327,8 @@ def main() -> None:
         state = None
         for h in range(args.hops):
             past_len = h * args.seg if accum else (0 if state is None else k)
-            state = compress(model, mem, w[:, h * args.seg : (h + 1) * args.seg],
+            state = compress(model, rnd_mem if use_random else mem,
+                             w[:, h * args.seg : (h + 1) * args.seg],
                              past=state, past_len=past_len, grad=False, k=k)
         return state
 
@@ -330,17 +338,18 @@ def main() -> None:
         ["upper", "lower", "abstract_all", "abstract_accum",
          "anchors_only", "hybrid", "query_hybrid",
          "chunked_query", "surprisal_hybrid", "two_stage", "speculative",
+         "spec_anchors_only", "spec_random_state",
          "oracle_only", "oracle_hybrid"], 0.0)
     n_anchor = 0
     with torch.no_grad():
         for i in range(len(data)):
             w = data[i : i + 1].to(dev)
             ctx, tail = w[:, :cut], w[:, cut : cut + args.seg]
-            full = [(l.keys, l.values) for l in model(ctx, use_cache=True).past_key_values.layers]
+            full = kv_only(model, ctx)
             row = {}
             # topic spread of this window: block means at a middle layer, mean
             # pairwise cosine distance. Low = the context stays on one subject.
-            hs = model(ctx, output_hidden_states=True).hidden_states[
+            hs = model.model(input_ids=ctx, output_hidden_states=True).hidden_states[
                 cfg.num_hidden_layers // 2][0]
             nb, bl = 16, ctx.shape[1] // 16
             bmean = F.normalize(hs[: nb * bl].view(nb, bl, -1).mean(1).float(), dim=-1)
@@ -368,6 +377,7 @@ def main() -> None:
 
             # hybrid: anchors first (original positions), abstract state after
             st = roll(w, args.k, accum=True)
+            rnd_state = roll(w, args.k, accum=True, use_random=True)
             mix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
                    for (ak, av), (sk, sv) in zip(anc, st)]
             tot["hybrid"] += seg_b_loss(model, cfg, tail, mix, cut + args.k).item()
@@ -452,6 +462,17 @@ def main() -> None:
             row["speculative"] = seg_b_loss(
                 model, cfg, tail, pmix, cut + args.k).item()
 
+            # How much is the abstract state actually worth? The same retrieved
+            # anchors with nothing behind them, and with randomly initialised
+            # slots behind them, bracket its contribution. If both land near the
+            # hybrid, the compressor is decoration and retrieval does the work.
+            row["spec_anchors_only"] = seg_b_loss(
+                model, cfg, tail, panc, cut).item()
+            rmix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
+                    for (ak, av), (sk, sv) in zip(panc, rnd_state)]
+            row["spec_random_state"] = seg_b_loss(
+                model, cfg, tail, rmix, cut + args.k).item()
+
             oidx = oracle_anchors(ctx, tail, args.anchors, args.sink)
             oanc = [(kk[:, :, oidx], vv[:, :, oidx]) for kk, vv in full]
             tot["oracle_only"] += seg_b_loss(model, cfg, tail, oanc, cut).item()
@@ -485,6 +506,8 @@ def main() -> None:
                         ("speculative",
                          f"SPECULATIVE r{args.spec_rounds} "
                          f"{args.spec_samples}x{args.probe} + {args.k}"),
+                        ("spec_anchors_only", "  ^ same anchors, NO state"),
+                        ("spec_random_state", "  ^ same anchors, RANDOM state"),
                         ("oracle_only", f"{args.anchors} ORACLE anchors only"),
                         ("oracle_hybrid", f"{args.anchors} ORACLE + {args.k} abstract")):
         ce = tot[name]

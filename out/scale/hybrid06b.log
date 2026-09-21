@@ -1,0 +1,50 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13488.04it/s]
+12 windows | 8 hops over 4096 tokens
+budget 576 = 512 anchors + 64 abstract (7:1)
+
+upper (all 4096 KV) CE=3.1076
+lower (nothing)      CE=4.0830   gap=0.9754 nats
+anchors actually placed: 512.0 of 512 requested
+
+  condition                        CE   recovery
+  ----------------------------------------------
+  576 abstract (compact pos)   3.4399    +65.9%
+  576 abstract (accum pos)     3.4158    +68.4%
+  512 anchors only             3.8803    +20.8%
+  512 anchors + 64 abstract    3.3499    +75.2%
+  512 QUERY + 64 abstract      3.2287    +87.6%
+  512 QUERY re-retrieved/0     0.0000   +418.6%
+  512 SURPRISAL + 64 abstract   3.2716    +83.2%
+  SURPRISAL512->QUERY512 + 64   3.2716    +83.2%
+  SPECULATIVE r1 1x128 + 64    3.2266    +87.8%
+  512 ORACLE anchors only      3.4723    +62.6%
+  512 ORACLE + 64 abstract     3.1034   +100.4%
+
+=== split by topic spread ===
+  single-topic  spread=0.040 gap=0.956  abstract +71.6%  surprisal +83.4%  specul +87.7%  oracle +102.7%
+  multi-topic   spread=0.046 gap=0.995  abstract +65.4%  surprisal +83.0%  specul +87.9%  oracle +98.3%
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13194.71it/s]
+12 windows | 8 hops over 4096 tokens
+budget 576 = 512 anchors + 64 abstract (7:1)
+
+upper (all 4096 KV) CE=3.1076
+lower (nothing)      CE=4.0830   gap=0.9754 nats
+anchors actually placed: 512.0 of 512 requested
+
+  condition                        CE   recovery
+  ----------------------------------------------
+  576 abstract (compact pos)   3.4399    +65.9%
+  576 abstract (accum pos)     3.4158    +68.4%
+  512 anchors only             3.8803    +20.8%
+  512 anchors + 64 abstract    3.3499    +75.2%
+  512 QUERY + 64 abstract      3.2287    +87.6%
+  512 QUERY re-retrieved/0     0.0000   +418.6%
+  512 SURPRISAL + 64 abstract   3.2716    +83.2%
+  SURPRISAL512->QUERY512 + 64   3.2716    +83.2%
+  SPECULATIVE r1 1x128 + 64    3.2266    +87.8%
+  512 ORACLE anchors only      3.4723    +62.6%
+  512 ORACLE + 64 abstract     3.1034   +100.4%
+
+=== split by topic spread ===
+  single-topic  spread=0.040 gap=0.956  abstract +71.6%  surprisal +83.4%  specul +87.7%  oracle +102.7%
+  multi-topic   spread=0.046 gap=0.995  abstract +65.4%  surprisal +83.0%  specul +87.9%  oracle +98.3%

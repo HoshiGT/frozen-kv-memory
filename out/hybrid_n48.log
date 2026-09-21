@@ -1,0 +1,56 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 12280.10it/s]
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+48 windows | 8 hops over 4096 tokens
+budget 576 = 512 anchors + 64 abstract (7:1)
+
+upper (all 4096 KV) CE=3.0359
+lower (nothing)      CE=4.0922   gap=1.0563 nats
+anchors actually placed: 512.0 of 512 requested
+
+  condition                        CE   recovery
+  ----------------------------------------------
+  576 abstract (compact pos)   3.3894    +66.5%
+  576 abstract (accum pos)     3.3661    +68.7%
+  512 anchors only             3.8911    +19.0%
+  512 anchors + 64 abstract    3.2949    +75.5%
+  512 QUERY + 64 abstract      3.1923    +85.2%
+  512 QUERY re-retrieved/0     0.0000   +387.4%
+  512 SURPRISAL + 64 abstract   3.2355    +81.1%
+  SURPRISAL512->QUERY512 + 64   3.2355    +81.1%
+  SPECULATIVE r1 1x128 + 64    3.1959    +84.9%
+    ^ same anchors, NO state   3.6050    +46.1%
+    ^ same anchors, RANDOM state   4.5135    -39.9%
+  512 ORACLE anchors only      3.3874    +66.7%
+  512 ORACLE + 64 abstract     2.9946   +103.9%
+
+=== split by topic spread ===
+  single-topic  spread=0.041 gap=1.045  abstract +72.5%  surprisal +85.0%  specul +88.8%  oracle +103.9%
+  multi-topic   spread=0.056 gap=1.068  abstract +65.0%  surprisal +77.3%  specul +81.0%  oracle +103.9%
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 13105.22it/s]
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+48 windows | 8 hops over 4096 tokens
+budget 576 = 512 anchors + 64 abstract (7:1)
+
+upper (all 4096 KV) CE=3.0359
+lower (nothing)      CE=4.0922   gap=1.0563 nats
+anchors actually placed: 512.0 of 512 requested
+
+  condition                        CE   recovery
+  ----------------------------------------------
+  576 abstract (compact pos)   3.3894    +66.5%
+  576 abstract (accum pos)     3.3661    +68.7%
+  512 anchors only             3.8911    +19.0%
+  512 anchors + 64 abstract    3.2949    +75.5%
+  512 QUERY + 64 abstract      3.1923    +85.2%
+  512 QUERY re-retrieved/0     0.0000   +387.4%
+  512 SURPRISAL + 64 abstract   3.2355    +81.1%
+  SURPRISAL512->QUERY512 + 64   3.2355    +81.1%
+  SPECULATIVE r1 1x128 + 64    3.1959    +84.9%
+    ^ same anchors, NO state   3.6050    +46.1%
+    ^ same anchors, RANDOM state   4.1296     -3.5%
+  512 ORACLE anchors only      3.3874    +66.7%
+  512 ORACLE + 64 abstract     2.9946   +103.9%
+
+=== split by topic spread ===
+  single-topic  spread=0.041 gap=1.045  abstract +72.5%  surprisal +85.0%  specul +88.8%  oracle +103.9%
+  multi-topic   spread=0.056 gap=1.068  abstract +65.0%  surprisal +77.3%  specul +81.0%  oracle +103.9%
