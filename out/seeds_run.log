@@ -1,1 +1,16 @@
 === train seed 0 18:31:14 ===
+=== train seed 1 18:43:52 ===
+=== train seed 2 18:56:32 ===
+=== hybrid seed 0 19:09:13 ===
+    ^ same anchors, state=LAST SEG only   3.2258    +74.4%
+    ^ same anchors, NO state   3.6904    +31.3%
+  512 ORACLE + 64 abstract     3.0047    +95.0%
+=== hybrid seed 1 19:12:51 ===
+    ^ same anchors, state=LAST SEG only   3.2177    +75.2%
+    ^ same anchors, NO state   3.6971    +30.6%
+  512 ORACLE + 64 abstract     2.9889    +96.4%
+=== hybrid seed 2 19:16:28 ===
+    ^ same anchors, state=LAST SEG only   3.2018    +76.7%
+    ^ same anchors, NO state   3.6784    +32.4%
+  512 ORACLE + 64 abstract     2.9840    +96.9%
+=== done 19:20:05 ===
