@@ -1,0 +1,7 @@
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]Loading weights: 100%|██████████| 311/311 [00:00<00:00, 11575.88it/s]
+init memtok_k32_deep_frozen.pt (128 slots, depth=27) | k=64 | anchors=512 | backbone frozen
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (1033748 > 131072). Running this sequence through the model will result in indexing errors
+train 122 / eval 16 windows of 4608 tokens
+
+[init] | h4: solo +82% hybrid +103%  h8: solo +71% hybrid +84%
+

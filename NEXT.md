@@ -1,52 +1,67 @@
-# 明天从这里接上
+# TODO
 
-## 手上的硬事实
+昨天那份已全部做完（预算杠杆、天花板成因、混合架构、检索策略）。这是 2026-09-21 下午起的新队列。
 
-- 16:1 单跳 **+104%**，8 跳 128:1 **~60%**，衰减收敛
-- **~60% 的天花板：训练推不动（0.6B/1.7B 都试了），规模也推不动**
-- 三个杠杆用掉两个，只剩**预算**没动过
-
-## 最该先跑的一个实验
-
-天花板是不是随预算线性移动？不需要写任何新代码：
+## 当前最好的配置
 
 ```bash
-for K in 32 64 128; do
-  python -u train_recur.py --mem-depth --k $K --hops 1,6 --bptt 2 \
-    --steps 0 --eval-hops 1,2,4,8 --model ./qwen3-0.6b \
-    --init ckpt/memtok_k32_deep_frozen.pt
-done
+python hybrid.py --k 64 --anchors 512 --probe 128 --hops 8
+# 7:1 压缩，speculative 检索 +86.8%，纯抽象只有 +69.4%
 ```
 
-（`--steps 0` 现在会报错，改成 `--steps 50` 看 init 那行即可；
-或者给 train_recur.py 加一个 `--eval-only`。）
+架构：64 抽象槽常驻 + 原文 KV offload + 按 speculative query 调入 512 条。
 
-三种可能，含义完全不同：
+## 1. 训练 anchor-aware 的记忆模块 ★ 主线
 
-| k=32→128 之后 8 跳的表现 | 说明 |
-|---|---|
-| 线性上升（60% → 80%+） | 预算就是唯一瓶颈，B 计划直接可行 |
-| 次线性（60% → 68%） | 有别的东西在限制，加预算性价比递减 |
-| 几乎不动 | **瓶颈根本不是预算**，前面的结论要重审 |
+现在用的 ckpt 是**纯抽象**训练出来的——它不知道将来身边会有 anchor，
+所以它在努力存一些 anchor 本来就能精确提供的东西，这部分是纯浪费。
 
-第三种最有可能被忽略，但 1.7B 的数据已经在暗示它：
-hunger（k16→k128 的收益）在 1.7B 上只有 +0.038 nats，说明大模型在 16 槽就接近饱和。
-**如果 128 槽也停在 60%，那"容量瓶颈"这个说法就站不住了**，
-真正的限制可能是递归本身丢的东西——每跳都要重新编码一个已有损的状态，
-丢掉的不是"装不下的"，而是"已经不在里面的"。
+训练时就把 anchor 放进 past，抽象槽的梯度自然会转向"anchor 拿不到的那部分"：
 
-## 待分析的问题
+- `diagnose.py` 已经指出分工线在哪：novel token 归抽象（+231%），
+  seen 尤其 seen×1 归 anchor（+46%）
+- anchor 用 surprisal 选（encoding-time，训练循环里够快；speculative 太慢）
+- anchor 的 KV 是 detach 的原文，梯度只流经抽象槽
+- 预期：抽象槽专注 gist 后，同预算下整体还能再涨
 
-1. 天花板为何恰好在 ~60%——有没有信息论上的解释（32 槽能携带多少 bit）
-2. 衰减为什么收敛而非发散？收敛说明每跳丢的东西在减少，那丢的是什么
-3. 两个便宜的预算信号都零相关，而 gap 有弱信号（+0.133）——
-   gap 要实跑才知道，能不能改成"压完测一下不够再补"的反馈式
-4. Matryoshka 嵌套解决 k=16 的角色冲突（0.6B 上前 16 槽既要独立工作又要当整体一部分）
+风险：可能没有提升，因为 seg_b_loss 的梯度本来就会避开 anchor 已覆盖的部分。
+那样的话结论是"分工是自发的，不需要显式训练"，也值得记。
+
+## 2. 1.7B 跨规模验证
+
+混合架构目前只在 0.6B 上测过。需要确认：
+- +86.8% 是否随规模保持或提升
+- surprisal / speculative 的优劣是否翻转（2048 上下文时 surprisal 已反超过一次）
+- 1.7B 在 8GB 卡上要 `--pred-len 192`，否则 tail 的 logits 就 311MB
+
+## 3. 打包成能用的东西
+
+现在全散在实验脚本里。最小可用形态：
+
+```
+compress(ctx) -> (abstract_state, offloaded_kv)
+retrieve(state, prefix, n) -> kv_to_page_in
+```
+
+配 `README-usage.md`。这是 MVP 真正能交付的那一层。
+
+## 4. 更新报告页
+
+https://claude.ai/artifact/WV3RJaDs97ZkdWCUuEvePZ
+里面全是 2026-09-20 的数字（128:1 写的 +50.8%），今天之后**整页需要重写**：
+主线已经从"压缩"变成"压缩 + 检索"。
+
+## 5. 可选的扩展
+
+- anchor 预算的扩展律（512 → 1024 → 2048，什么时候追平 upper）
+- 16 hops 以上：8192 时 speculative 掉到 +72.2%，oracle 仍有 +94.7%，
+  说明选择策略在长上下文下失效得比容量快，值得单独查
+- Matryoshka 嵌套（昨天记的，解决 k=16 角色冲突，现在优先级低）
 
 ## 环境备忘
 
 - `source ~/ctfenv/bin/activate`
-- 1.7B 在 8GB 卡上要 `--pred-len 192 --bptt 1`，否则 tail 的 logits 就 311MB
-- 仓库 https://github.com/HoshiGT/frozen-kv-memory 目前 **private**，确认后可改 public
-- 报告页 https://claude.ai/artifact/WV3RJaDs97ZkdWCUuEvePZ
-  （里面 128:1 写的是 +50.8%，是位置 bug 修正前的旧数，该更新成 ~60%）
+- 仓库 https://github.com/HoshiGT/frozen-kv-memory **private**，确认后可公开
+- `recur.py` 已废弃，位置约定有 bug，用 `train_recur.py`
+- ★ 位置要累积（`accum=True`），不要重置——值 4 个点
+- ★ 任何只保留部分 KV 的方案都必须带 attention sink，否则 −400%

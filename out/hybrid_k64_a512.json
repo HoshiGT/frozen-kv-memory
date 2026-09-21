@@ -1,0 +1,45 @@
+{
+ "args": {
+  "seg": 512,
+  "k": 64,
+  "anchors": 512,
+  "sink": 4,
+  "hops": "2,4",
+  "eval_hops": "4,8",
+  "bptt": 2,
+  "pred_len": 0,
+  "steps": 20,
+  "lr": 0.002,
+  "accum": 2,
+  "mem_depth": true,
+  "init": "/home/hoshi/Claude/memzip/ckpt/memtok_k32_deep_frozen.pt",
+  "no_anchors_in_training": false,
+  "chunks": 60,
+  "eval_n": 6,
+  "model": "/home/hoshi/Claude/memzip/qwen3-0.6b"
+ },
+ "log": [
+  {
+   "step": 0,
+   "4": {
+    "solo": 0.752704122219094,
+    "hybrid": 0.9518268254299153
+   },
+   "8": {
+    "solo": 0.6090200126505367,
+    "hybrid": 0.754009153490756
+   }
+  },
+  {
+   "step": 20,
+   "4": {
+    "solo": 0.7389383572140611,
+    "hybrid": 0.9686943075373844
+   },
+   "8": {
+    "solo": 0.604416931395973,
+    "hybrid": 0.7687188692471025
+   }
+  }
+ ]
+}

@@ -28,6 +28,8 @@
 
 把一段上下文压进固定数量的槽位，边读边压（而不是事后总结），看能保住多少信息。
 
+**怎么用**：`README-usage.md`（`memory.py` 是实验结论的可用形态）
+
 **带图表的报告页**：https://claude.ai/artifact/WV3RJaDs97ZkdWCUuEvePZ
 （同目录 `report.html` 是同一份，可离线打开）
 
