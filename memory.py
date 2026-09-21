@@ -4,7 +4,7 @@
 hybrid.py is a measurement rig -- it computes eight conditions to compare them.
 This is the one configuration that won, with the comparisons removed:
 
-    64 abstract slots, resident               the gist, what comes next
+    64 abstract slots over the last segment   the gist, what comes next
     original KV, offloaded                    every specific, verbatim
     512 entries paged in per query            what this moment needs
 
@@ -12,10 +12,14 @@ Measured on Qwen3-0.6B over 4096 tokens of real dialogue at 7:1: +86.8% of the
 information a full cache provides, against +69.4% for spending the same budget
 entirely on abstraction.
 
+VRAM is O(n/8) rather than O(1): the anchors are paged into the same scarce
+memory and have to grow with the context to hold coverage. What the scheme
+actually buys is moving the O(n) bulk off the GPU.
+
 Three findings are baked in rather than configurable, because getting them wrong
 is expensive and none of them is a preference:
 
-  positions accumulate across hops        4 points; resetting them was my bug
+  only the last segment is summarised     rolling dilutes it; 4 points
   the sink is always anchored             without it, partial KV scores -400%
   the query is what the state imagines    beats using the real prefix as query
 
@@ -73,7 +77,7 @@ class Handle:
 
 class HybridMemory:
     def __init__(self, model, tok, mem: MemoryTokens, k: int = 64,
-                 seg: int = 512, sink: int = 4, offload: str = "cpu"):
+                 seg: int = 1024, sink: int = 4, offload: str = "cpu"):
         self.model, self.tok, self.mem = model, tok, mem
         self.cfg = model.config
         self.k, self.seg, self.sink = k, seg, sink
@@ -93,15 +97,24 @@ class HybridMemory:
 
     @torch.no_grad()
     def compress(self, ids: torch.Tensor) -> Handle:
-        """Roll the state across the context and keep the full KV to page from."""
+        """Summarise the most recent segment and keep the full KV to page from.
+
+        Earlier versions rolled one state across the whole context, hop by hop.
+        tiered.py showed that does not accumulate: compressing only the last
+        segment scores +76.1% inside the hybrid against +72.2% for a 16-hop
+        roll over the same 8192 tokens, at a sixteenth of the compute. The
+        state's effective window is about one segment, so rolling mostly
+        dilutes what that segment contributed.
+
+        Everything older is not summarised at all -- it is carried verbatim in
+        `kv` and retrieved on demand. That division is not a preference: an
+        abstract state holds what the model could have predicted anyway, and
+        what it could not is exactly what only the original KV retains.
+        """
         n = ids.shape[1]
-        state = None
-        for h in range(0, n, self.seg):
-            chunk = ids[:, h : h + self.seg]
-            if chunk.shape[1] < 8:                    # a ragged tail is not worth a hop
-                break
-            state = compress(self.model, self.mem, chunk, past=state,
-                             past_len=h, grad=False, k=self.k)
+        start = max(0, n - self.seg)
+        state = compress(self.model, self.mem, ids[:, start:], past=None,
+                         past_len=start, grad=False, k=self.k)
         full = kv_only(self.model, ids)
         if self.offload != "cuda":
             full = [(k.to(self.offload, non_blocking=True),
@@ -162,8 +175,14 @@ class HybridMemory:
 
     @torch.no_grad()
     def recall(self, handle: Handle, prefix: torch.Tensor, n: int = 512,
-               draft: int = 128):
-        """Assemble the cache for the next step: sink + anchors + abstract state."""
+               draft: int = 16):
+        """Assemble the cache for the next step: sink + anchors + abstract state.
+
+        `draft` is the whole hot-path cost -- one forward per token generated.
+        Measured at 8/16/32/128 it scores 70.7/70.9/70.9/71.4%, so 16 gives away
+        half a point and runs eight times faster. The draft only has to point in
+        the right direction; it was never going to get the details right.
+        """
         dev = prefix.device
         guess = self._imagine(handle, prefix, draft)
         score = self._score(handle, guess)
