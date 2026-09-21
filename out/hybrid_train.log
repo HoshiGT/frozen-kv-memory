@@ -1,1 +1,7 @@
 === with anchors in training 11:46:34 ===
+[ 350] | h4: solo +56% hybrid +102%  h8: solo +49% hybrid +83% | 767s
+[ 400] | h4: solo +55% hybrid +102%  h8: solo +49% hybrid +83% | 876s
+=== control: no anchors in training 12:01:57 ===
+[ 350] | h4: solo +75% hybrid +99%  h8: solo +67% hybrid +82% | 551s
+[ 400] | h4: solo +75% hybrid +99%  h8: solo +67% hybrid +82% | 630s
+=== done 12:13:14 ===

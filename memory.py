@@ -39,6 +39,22 @@ import torch
 from memtok import MemoryTokens, compress, _layers
 
 
+@torch.no_grad()
+def kv_only(model, ids: torch.Tensor):
+    """KV for a sequence, without paying for its logits.
+
+    Inference-only by construction: filling a cache never needs a graph, and
+    building one over 4096 positions costs gigabytes of stored activations.
+
+    Calling the causal-LM wrapper computes a distribution at every position:
+    4096 tokens over a 151k vocabulary is 1.2GB in bf16, none of which is wanted
+    when the point is to fill a cache. The inner model stops before the head.
+    """
+    base = getattr(model, "model", model)
+    out = base(input_ids=ids, use_cache=True)
+    return [(l.keys, l.values) for l in out.past_key_values.layers]
+
+
 @dataclass
 class Handle:
     """What compression leaves behind: a small resident part and a large cold one."""
@@ -86,8 +102,7 @@ class HybridMemory:
                 break
             state = compress(self.model, self.mem, chunk, past=state,
                              past_len=h, grad=False, k=self.k)
-        full = [(l.keys, l.values) for l in
-                self.model(ids, use_cache=True).past_key_values.layers]
+        full = kv_only(self.model, ids)
         if self.offload != "cuda":
             full = [(k.to(self.offload, non_blocking=True),
                      v.to(self.offload, non_blocking=True)) for k, v in full]
@@ -131,7 +146,8 @@ class HybridMemory:
     def _score(self, handle: Handle, query: torch.Tensor) -> torch.Tensor:
         """Attention from the query over the cold keys, one score per position."""
         dev = query.device
-        h = self.model(query, output_hidden_states=True).hidden_states[-2][0]
+        base = getattr(self.model, "model", self.model)
+        h = base(input_ids=query, output_hidden_states=True).hidden_states[-2][0]
         layer = _layers(self.model)[-1]
         attn = layer.self_attn
         q = attn.q_proj(layer.input_layernorm(h))
@@ -185,6 +201,8 @@ if __name__ == "__main__":
 
     data = load_chunks(tok, a.ctx + 512, a.n)
     lo = hi = hy = 0.0
+    stats = (1, 1)
+    torch.set_grad_enabled(False)          # nothing here trains
     for i in range(a.n):
         w = data[i : i + 1].to(dev)
         ctx, tail = w[:, : a.ctx], w[:, a.ctx : a.ctx + 512]
@@ -192,11 +210,14 @@ if __name__ == "__main__":
         past = mem.recall(hnd, tail[:, :1])
         hy += seg_b_loss(model, mem.cfg, tail, past, mem.offset(hnd)).item()
         lo += seg_b_loss(model, mem.cfg, tail, None, a.ctx).item()
-        full = [(l.keys, l.values) for l in model(ctx, use_cache=True).past_key_values.layers]
+        full = kv_only(model, ctx)
         hi += seg_b_loss(model, mem.cfg, tail, full, a.ctx).item()
+        stats = (hnd.resident_bytes(), hnd.cold_bytes())
+        # a full cache is ~470MB here; one per window does not fit eight times
+        del hnd, past, full, w, ctx, tail
+        torch.cuda.empty_cache()
     lo, hi, hy = lo / a.n, hi / a.n, hy / a.n
     print(f"upper {hi:.4f}  lower {lo:.4f}  hybrid {hy:.4f}")
     print(f"recovery {(lo - hy) / (lo - hi):+.1%}")
-    print(f"resident {hnd.resident_bytes()/2**20:.1f} MiB  "
-          f"cold {hnd.cold_bytes()/2**20:.1f} MiB  "
-          f"({hnd.cold_bytes()/hnd.resident_bytes():.0f}x offloaded)")
+    print(f"resident {stats[0]/2**20:.1f} MiB  cold {stats[1]/2**20:.1f} MiB  "
+          f"({stats[1]/stats[0]:.0f}x offloaded)")

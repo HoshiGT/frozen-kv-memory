@@ -5,3 +5,13 @@ train 122 / eval 16 windows of 4608 tokens
 
 [init] | h4: solo +82% hybrid +103%  h8: solo +71% hybrid +84%
 
+[  50] | h4: solo +77% hybrid +105%  h8: solo +67% hybrid +86% | 108s
+[ 100] | h4: solo +70% hybrid +104%  h8: solo +61% hybrid +85% | 217s
+[ 150] | h4: solo +58% hybrid +102%  h8: solo +51% hybrid +83% | 328s
+[ 200] | h4: solo +65% hybrid +104%  h8: solo +56% hybrid +85% | 438s
+[ 250] | h4: solo +59% hybrid +102%  h8: solo +52% hybrid +83% | 550s
+[ 300] | h4: solo +57% hybrid +102%  h8: solo +50% hybrid +84% | 660s
+[ 350] | h4: solo +56% hybrid +102%  h8: solo +49% hybrid +83% | 767s
+[ 400] | h4: solo +55% hybrid +102%  h8: solo +49% hybrid +83% | 876s
+
+saved out/hybrid_k64_a512.json
