@@ -30,6 +30,34 @@ python hybrid.py --k 64 --anchors 512 --probe 128 --hops 8
 - **恢复** → 是覆盖率问题，加预算能解决
 - **不恢复** → 选择本身在长上下文下退化，需要新方法
 
+## Airi 落地：等 10 月中加内存条
+
+目标模型是 **Qwen3.6-35B-A3B**，推理端用 **FreeToken**（专家在 CPU、激活参数在 GPU）。
+现在 15G 内存不够（FreeToken 会 pin 全部专家 19G），等 10 月中加条子。
+
+**关键判断：FreeToken 是 torch 生态的，路线大概率通。**
+
+```
+依赖: torch, transformers, triton, safetensors, gguf ...
+freetoken/kvcache/: mha_pool.py  dsa_pool.py  hybrid_swa_pool.py  cache_status.py
+```
+
+KV 是 torch tensor，而且有独立的 cache pool 抽象——和 llama.cpp 完全不同
+（llama.cpp 不暴露 KV 注入，这条路是死的）。
+
+**训练和推理可以分离**：记忆模块只是个 3.67M 的权重文件。
+
+1. 租 96G 卡，PyTorch bf16 训 35B 的记忆模块（~75GB 显存，2–3 小时，
+   主要时间在下 70GB 权重；GGUF 训不了）
+2. 本地 FreeToken 推理时加载它
+
+**加内存后要先确认的**（在花钱之前）：
+- `freetoken/kvcache/*_pool.py` 能不能写入外部构造的 KV
+- 能不能用 `inputs_embeds` 喂 memory token（compress 需要）
+- 能不能拿到某些位置的 KV 切片（anchor 需要）
+
+这三样有一样不行，就得改 FreeToken 或者换推理端。**先验接口，再训模型。**
+
 ## 还没做
 
 - anchor 预算扩展律：512 → 1024 → 2048，什么时候追平 upper
