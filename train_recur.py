@@ -67,6 +67,18 @@ def main() -> None:
                          "here. Compression ratio is set by seg/k and is untouched.")
     ap.add_argument("--eval-hops", default="1,2,4,8")
     ap.add_argument("--steps", type=int, default=600)
+    ap.add_argument("--keep", type=int, default=0,
+                    help="how many slots carry over from the previous state untouched "
+                         "instead of being rewritten. 0 = today's behaviour, every slot "
+                         "re-encoded every hop. The budget sweep showed capacity is not "
+                         "the bottleneck, so what is lost is lost during re-encoding -- "
+                         "slots that are never re-encoded cannot lose anything.")
+    ap.add_argument("--keep-which", default="old", choices=["old", "new"],
+                    help="old: the earliest-written slots stay resident, like an "
+                         "attention sink for memory. new: a FIFO window, oldest evicted.")
+    ap.add_argument("--eval-only", action="store_true",
+                    help="report the init evaluation and stop; for sweeping a loaded "
+                         "checkpoint across budgets without touching it")
     ap.add_argument("--lr", type=float, default=5e-3)
     ap.add_argument("--accum", type=int, default=2)
     ap.add_argument("--mem-depth", action="store_true")
@@ -120,14 +132,28 @@ def main() -> None:
         return (k if hops > 1 else 0) + args.seg + k
 
     def roll(w, hops: int, k: int, grad: bool):
-        """Run the recursion; gradient only through the last `bptt` hops."""
+        """Run the recursion; gradient only through the last `bptt` hops.
+
+        With --keep, only k-keep slots are written per hop and the rest are
+        carried over from the previous state as-is. The state stays exactly k
+        wide either way; what changes is how often a given slot is re-encoded.
+        """
+        keep = min(args.keep, k - 1)
         state = None
         first_grad = max(0, hops - args.bptt) if grad else hops
         for h in range(hops):
             seg_ids = w[:, h * args.seg : (h + 1) * args.seg]
             past_len = 0 if state is None else k
-            state = compress(model, mem, seg_ids, past=state, past_len=past_len,
-                             grad=grad and h >= first_grad, k=k)
+            k_new = k if state is None else k - keep
+            new = compress(model, mem, seg_ids, past=state, past_len=past_len,
+                           grad=grad and h >= first_grad, k=k_new)
+            if state is None or keep == 0:
+                state = new
+            else:
+                sl = slice(0, keep) if args.keep_which == "old" else slice(k - keep, k)
+                state = [(torch.cat([ok[:, :, sl], nk], dim=2),
+                          torch.cat([ov[:, :, sl], nv], dim=2))
+                         for (ok, ov), (nk, nv) in zip(state, new)]
             if h + 1 == first_grad:      # cut the graph before the trailing hops
                 state = [(kk.detach(), vv.detach()) for kk, vv in state]
         return state
@@ -162,6 +188,13 @@ def main() -> None:
 
     e0 = evaluate()
     print(line("[init]", e0) + "\n")
+    if args.eval_only:
+        for h in eval_hops:
+            e = e0[h]
+            print(f"  hops={h:2d}  ratio={e['ratio']:5.0f}:1  "
+                  f"upper={e['upper']:.4f}  lower={e['lower']:.4f}  "
+                  f"mem={e['mem']:.4f}  recovery={e['recovery']:+.1%}")
+        return
 
     opt = torch.optim.AdamW([{"params": list(mem.parameters()), "lr": args.lr}],
                             weight_decay=0.01)
