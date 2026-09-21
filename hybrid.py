@@ -332,6 +332,7 @@ def main() -> None:
                              past=state, past_len=past_len, grad=False, k=k)
         return state
 
+    recall_hits = [0, 0]
     per_window = []
     spreads = []
     tot = dict.fromkeys(
@@ -474,6 +475,13 @@ def main() -> None:
                 model, cfg, tail, rmix, cut + args.k).item()
 
             oidx = oracle_anchors(ctx, tail, args.anchors, args.sink)
+            # How much of the oracle's choice did the deployable one find? This
+            # separates "picked the wrong places" from every other way the
+            # numbers could move, and it is the quantity that should degrade if
+            # selection is what fails on longer contexts.
+            hits = len(set(pidx.tolist()) & set(oidx.tolist()))
+            recall_hits[0] += hits
+            recall_hits[1] += len(oidx)
             oanc = [(kk[:, :, oidx], vv[:, :, oidx]) for kk, vv in full]
             tot["oracle_only"] += seg_b_loss(model, cfg, tail, oanc, cut).item()
             omix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
@@ -493,6 +501,8 @@ def main() -> None:
     print(f"upper (all {cut} KV) CE={tot['upper']:.4f}")
     print(f"lower (nothing)      CE={tot['lower']:.4f}   gap={gap:.4f} nats")
     print(f"anchors actually placed: {n_anchor/n:.1f} of {args.anchors} requested\n")
+    print(f"  anchor overlap with the oracle's choice: "
+          f"{recall_hits[0]/max(1,recall_hits[1]):.1%}\n")
     print(f"  {'condition':<26} {'CE':>8} {'recovery':>10}")
     print("  " + "-" * 46)
     for name, label in (("abstract_all", f"{total_budget} abstract (compact pos)"),
