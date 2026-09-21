@@ -47,14 +47,16 @@ pget() {
 fetch_model() {
   local name=$1 dir=$2
   mkdir -p "$dir"; pushd "$dir" >/dev/null
-  local B=https://huggingface.co/Qwen/$name/resolve/main
+  # HF_BASE lets this run from a mirror; direct huggingface.co is unreachable
+  # from some networks and the mirror serves the same files
+  local B=${HF_BASE:-https://huggingface.co}/Qwen/$name/resolve/main
   for f in config.json generation_config.json tokenizer.json tokenizer_config.json \
            vocab.json merges.txt model.safetensors.index.json; do
     [ -s "$f" ] || curl -sfL -o "$f" "$B/$f" 2>/dev/null
   done
   local shards
   if [ -s model.safetensors.index.json ]; then
-    shards=$(/root/miniconda3/bin/python -c "import json;print(' '.join(sorted(set(json.load(open('model.safetensors.index.json'))['weight_map'].values()))))")
+    shards=$(${PY:-python} -c "import json;print(' '.join(sorted(set(json.load(open('model.safetensors.index.json'))['weight_map'].values()))))")
   else
     rm -f model.safetensors.index.json
     shards=model.safetensors

@@ -340,6 +340,7 @@ def main() -> None:
          "anchors_only", "hybrid", "query_hybrid",
          "chunked_query", "surprisal_hybrid", "two_stage", "speculative",
          "spec_anchors_only", "spec_random_state",
+         "last_seg_state",
          "oracle_only", "oracle_hybrid"], 0.0)
     n_anchor = 0
     with torch.no_grad():
@@ -473,6 +474,18 @@ def main() -> None:
                     for (ak, av), (sk, sv) in zip(panc, rnd_state)]
             row["spec_random_state"] = seg_b_loss(
                 model, cfg, tail, rmix, cut + args.k).item()
+            # tiered.py found the rolling state's effective window is about one
+            # segment: compressing only the last 512 tokens beat rolling over
+            # 8192 by 4.1 points. If that holds inside the hybrid, rolling is
+            # not just unnecessary but harmful, and the distant past is carried
+            # entirely by the anchors.
+            st_last = compress(model, mem, w[:, cut - args.seg : cut],
+                               past=None, past_len=cut - args.seg,
+                               grad=False, k=args.k)
+            lmix = [(torch.cat([ak, sk], dim=2), torch.cat([av, sv], dim=2))
+                    for (ak, av), (sk, sv) in zip(panc, st_last)]
+            row["last_seg_state"] = seg_b_loss(
+                model, cfg, tail, lmix, cut + args.k).item()
 
             oidx = oracle_anchors(ctx, tail, args.anchors, args.sink)
             # How much of the oracle's choice did the deployable one find? This
@@ -516,6 +529,7 @@ def main() -> None:
                         ("speculative",
                          f"SPECULATIVE r{args.spec_rounds} "
                          f"{args.spec_samples}x{args.probe} + {args.k}"),
+                        ("last_seg_state", "  ^ same anchors, state=LAST SEG only"),
                         ("spec_anchors_only", "  ^ same anchors, NO state"),
                         ("spec_random_state", "  ^ same anchors, RANDOM state"),
                         ("oracle_only", f"{args.anchors} ORACLE anchors only"),

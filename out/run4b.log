@@ -1,0 +1,10 @@
+=== waiting for download 15:24:24 ===
+7.6G	qwen3-4b
+=== smoke: does --load-4bit work at all 15:24:24 ===
+[init] upper=3.0393 lower=3.7762 mem=5.7657
+[  20] k= 32 up=3.039 low=3.776 mem=3.4262 gap=0.737 recovery=+47.5% | k16:+44% k32:+48% k72:+43% k128:+23% | 52s
+=== train 15:25:34 ===
+[ 950] k= 32 up=3.101 low=3.923 mem=3.1522 gap=0.822 recovery=+93.8% | k16:+72% k32:+94% k72:+101% k128:+102% | 2943s
+[1000] k= 32 up=3.101 low=3.923 mem=3.1525 gap=0.822 recovery=+93.7% | k16:+72% k32:+94% k72:+101% k128:+102% | 3098s
+memtok_4b_deep.pt
+=== done 16:17:49 ===
